@@ -105,11 +105,11 @@ nav:not([hidden]){animation:navin .45s var(--ease)}
 @keyframes shake{20%,60%{transform:translateX(-9px)}40%,80%{transform:translateX(9px)}}
 #ap.f{animation:inF .4s var(--ease)}
 #ap.b{animation:inB .4s var(--ease)}
-#ap.x>*{animation:inU .45s var(--ease) both}
-#ap.x>*:nth-child(2){animation-delay:.04s}#ap.x>*:nth-child(3){animation-delay:.08s}#ap.x>*:nth-child(4){animation-delay:.12s}
-#ap.x>*:nth-child(5){animation-delay:.16s}#ap.x>*:nth-child(n+6){animation-delay:.2s}
-#ap.x .stk i{transform-origin:left;animation:grow .7s var(--ease) .15s both}
-#ap.x .bars i{transform-origin:bottom;animation:growY .7s var(--ease) .15s both}
+#ap.enter>*{animation:inU .45s var(--ease) both}
+#ap.enter>*:nth-child(2){animation-delay:.04s}#ap.enter>*:nth-child(3){animation-delay:.08s}#ap.enter>*:nth-child(4){animation-delay:.12s}
+#ap.enter>*:nth-child(5){animation-delay:.16s}#ap.enter>*:nth-child(n+6){animation-delay:.2s}
+#ap.enter .stk i{transform-origin:left;animation:grow .7s var(--ease) .15s both}
+#ap.enter .bars i{transform-origin:bottom;animation:growY .7s var(--ease) .15s both}
 .lk:not([hidden]){animation:fade .25s}
 .dots i{transition:background-color .15s,border-color .15s}
 .dots i.n{animation:pop .25s var(--spring)}
@@ -124,6 +124,37 @@ nav:not([hidden]){animation:navin .45s var(--ease)}
 .row2:active{background:var(--c2)}
 .row2 .g{flex:1;min-width:0}
 .chev{color:var(--m);font-size:22px;line-height:1}
+/* Tata letak mobile-first: cegah overflow dan jaga navigasi tetap dekat konten di desktop. */
+#ap{width:100%;min-width:0;color:var(--t)}
+#ap>*{min-width:0}
+.card,.hero,.grp{overflow-wrap:anywhere}
+.it .g,.row2 .g{overflow-wrap:anywhere;word-break:break-word}
+.chips{overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+nav{width:100%;padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right))}
+nav button{min-width:0;overflow-wrap:anywhere}
+#mb{width:100%;min-width:0}
+.fr select,.fr input{min-width:0}
+@media (max-width:360px){
+  .w{padding-left:12px;padding-right:12px}
+  .chips{margin-left:-12px;margin-right:-12px;padding-left:12px;padding-right:12px}
+  h1{font-size:22px}
+  .hero{padding:16px;border-radius:22px}
+  .big{font-size:clamp(22px,7vw,30px);gap:8px;min-width:0}
+  .pp{gap:8px}.pp div{padding:10px}.pp b{font-size:15px}
+  .chip{padding:9px 14px}
+  nav{gap:2px;padding-top:6px}
+  nav button{font-size:11px}
+  nav span{font-size:18px}
+  .fr{gap:8px}.fr select,.fr input{max-width:64%;font-size:15px}
+  .amt{font-size:34px}
+}
+@media (min-width:700px){
+  .w,#mb{max-width:560px}
+  nav{left:50%;right:auto;width:min(100%,560px);transform:translateX(-50%);border-left:1px solid var(--l);border-right:1px solid var(--l);border-radius:18px 18px 0 0}
+  .fab{right:max(18px,calc((100vw - 560px)/2 + 18px))}
+  .md{background:#0009;backdrop-filter:blur(4px)}
+  #mb{min-height:100%;background:var(--bg);box-shadow:0 0 32px #0005}
+}
 @media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -355,7 +386,7 @@ function draw(dir){   // dir: 'x' = muncul bertahap, 'f' = masuk dari kanan, 'b'
   $('#nv').hidden=false;
   document.querySelectorAll('#nv button').forEach(b=>b.classList.toggle('on',b.dataset.k==tab));
   const ap=$('#ap');ap.className='w';ap.innerHTML=V[tab]();
-  if(dir){void ap.offsetWidth;ap.classList.add(dir);scrollTo(0,0)}
+  if(dir){void ap.offsetWidth;ap.classList.add(dir==='x'?'enter':dir);scrollTo(0,0)}
   const k=fkey(),f=$('#fab');
   f.classList.toggle('h',tab=='ring'||(tab=='akun'&&!FA[k]));
   f.onclick=tab=='akun'?FA[k]:()=>trxForm();
