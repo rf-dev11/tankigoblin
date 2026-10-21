@@ -4,27 +4,38 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1a1a1a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Celengan">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Celengan</title>
 <style>
-:root{--bg:#1a1a1a;--c:#222;--c2:#2f2f2f;--g:#0bc78d;--gd:#06935f;--t:#f2f2f2;--m:#8d8d8d;--r:#ef5b5b;--l:#333;color-scheme:dark}
+:root{--bg:#1a1a1a;--c:#222;--c2:#2f2f2f;--g:#0bc78d;--gd:#06935f;--y:#f5b301;--t:#f2f2f2;--m:#8d8d8d;--r:#ef5b5b;--l:#333;color-scheme:dark}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}[hidden]{display:none!important}
-body{margin:0;background:var(--bg);color:var(--t);font:15px/1.4 system-ui,-apple-system,sans-serif;padding-bottom:calc(90px + env(safe-area-inset-bottom))}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--t);font:15px/1.4 system-ui,-apple-system,sans-serif;padding-bottom:calc(90px + env(safe-area-inset-bottom));overscroll-behavior-y:none}
+button,select,input{touch-action:manipulation}
 .w{max-width:520px;margin:auto;padding:16px;padding-top:calc(16px + env(safe-area-inset-top))}
 h1{font-size:24px;margin:4px 0 14px}h3{margin:18px 0 10px}
-.mt{color:var(--m)}.in{color:var(--g)}.out{color:var(--r)}
+.mt{color:var(--m)}.in{color:var(--g)}.out{color:var(--r)}.warn{color:var(--y)}
 .rw{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .chips{display:flex;gap:10px;overflow-x:auto;margin:0 -16px 14px;padding:0 16px;scrollbar-width:none}
-.chip{flex:none;background:var(--c2);color:var(--m);border-radius:99px;padding:10px 20px;border:0;font:inherit}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;background:var(--c2);color:var(--m);border-radius:99px;padding:10px 20px;border:0;font:inherit;min-height:44px}
 .chip.on{background:var(--g);color:#fff;font-weight:700}
 .hero{background:linear-gradient(135deg,var(--gd),#05a96d);border-radius:28px;padding:20px;margin-bottom:14px}
 .hero small{opacity:.85}.big{font-size:30px;font-weight:800;margin:4px 0 16px;display:flex;justify-content:space-between;align-items:center}
-.eye{background:#ffffff26;border:0;border-radius:12px;padding:6px 10px;font-size:16px}
+.eye{background:#ffffff26;border:0;border-radius:12px;padding:6px 10px;font-size:16px;min-height:36px}
 .pp{display:flex;gap:10px}.pp div{flex:1;background:#ffffff26;border-radius:18px;padding:12px}.pp b{display:block;font-size:17px}
 .card{background:var(--c);border-radius:24px;padding:14px 16px;margin-bottom:14px;border:1px solid var(--l)}
 .empty{text-align:center;padding:36px 16px}
 .day{color:var(--m);font-size:13px;margin:16px 0 2px}
 .it{display:flex;align-items:center;gap:12px;padding:10px 0}
 .it .g{flex:1;min-width:0}.it small{color:var(--m);display:block}
+.it small.in{color:var(--g)}.it small.out{color:var(--r)}.it small.warn{color:var(--y)}
 .ic{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;font-size:20px;flex:none;object-fit:cover;font-weight:700}
 .pie{width:180px;height:180px;border-radius:50%;margin:16px auto;position:relative}
 .pie:after{content:"";position:absolute;inset:36px;background:var(--c);border-radius:50%}
@@ -33,40 +44,57 @@ h1{font-size:24px;margin:4px 0 14px}h3{margin:18px 0 10px}
 .bars div{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
 .bars i{width:100%;background:var(--r);border-radius:8px 8px 3px 3px;min-height:3px}.bars small{color:var(--m);font-size:11px;margin-top:4px}
 nav{position:fixed;bottom:0;left:0;right:0;background:var(--c);display:flex;gap:4px;padding:8px 8px calc(8px + env(safe-area-inset-bottom));border-top:1px solid var(--l);z-index:5}
-nav button{flex:1;background:none;border:0;color:var(--m);padding:8px 0;font:inherit;font-size:12px;border-radius:18px}
+nav button{flex:1;background:none;border:0;color:var(--m);padding:8px 0;font:inherit;font-size:12px;border-radius:18px;min-height:50px}
 nav span{display:block;font-size:20px}nav .on{background:var(--c2);color:var(--g);font-weight:700}
 .fab{position:fixed;right:18px;bottom:calc(92px + env(safe-area-inset-bottom));width:60px;height:60px;border-radius:20px;border:0;background:var(--g);color:#fff;font-size:34px;box-shadow:0 6px 18px #0bc78d55;z-index:4}
-.md{position:fixed;inset:0;background:var(--bg);z-index:9;overflow:auto;display:none}.md.o{display:block}
-#mb{max-width:520px;margin:auto}
+.md{position:fixed;inset:0;background:var(--bg);z-index:9;overflow:auto;display:none;overscroll-behavior:contain}.md.o{display:block}
+#mb{max-width:520px;margin:auto;padding-bottom:calc(30px + env(safe-area-inset-bottom))}
 .mh{background:#079a73;padding:calc(14px + env(safe-area-inset-top)) 16px 18px;color:#fff}
 .mh .tt{font-size:18px;font-weight:700}.mh .x{color:#fff;font-size:22px}
 .seg{display:flex;background:#00000026;border-radius:99px;margin:12px 0}
-.seg button{flex:1;border:0;background:none;color:#ffffffcc;padding:10px 4px;border-radius:99px;font:inherit;font-size:14px}.seg .on{background:var(--g);color:#fff;font-weight:700}
+.seg button{flex:1;border:0;background:none;color:#ffffffcc;padding:10px 4px;border-radius:99px;font:inherit;font-size:14px;min-height:44px}.seg .on{background:var(--g);color:#fff;font-weight:700}
 .amt{width:100%;background:none;border:0;color:#fff;font-size:40px;font-weight:700;outline:0;padding:0}.amt::placeholder{color:#ffffff80}
-.fr{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1px solid var(--l)}.fr>span{color:var(--m)}
-.fr select,.fr input{background:none;border:0;color:var(--t);font:inherit;text-align:right;max-width:68%;outline:0}
+.fr{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-bottom:1px solid var(--l);min-height:52px}.fr>span{color:var(--m)}
+.fr select,.fr input{background:none;border:0;color:var(--t);font:inherit;font-size:16px;text-align:right;max-width:68%;outline:0}
+.fr select option{background:var(--c);color:var(--t)}
 .lb{color:var(--m);margin:16px 0 8px}
 .cg{display:flex;flex-wrap:wrap;gap:8px}
-.ch{background:var(--c2);color:var(--t);border:1.5px solid transparent;border-radius:14px;padding:9px 12px;font:inherit}.ch.on{border-color:var(--g);color:var(--g)}
-.sv{width:100%;margin-top:24px;background:var(--g);color:#fff;border:0;border-radius:16px;padding:15px;font:inherit;font-weight:700}
+.ch{background:var(--c2);color:var(--t);border:1.5px solid transparent;border-radius:14px;padding:9px 12px;font:inherit;min-height:44px}.ch.on{border-color:var(--g);color:var(--g)}
+.sv{width:100%;margin-top:24px;background:var(--g);color:#fff;border:0;border-radius:16px;padding:15px;font:inherit;font-weight:700;min-height:50px}
 .sv:disabled{opacity:.6}
-.x{background:none;border:0;color:var(--r);font:inherit;padding:6px}
+.x{background:none;border:0;color:var(--r);font:inherit;padding:6px;min-height:36px}
 .stk{display:flex;height:8px;border-radius:99px;overflow:hidden;background:var(--c2);margin:10px 0}.stk i{display:block;height:100%}
 button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--g);outline-offset:2px}
+/* switch */
+.sw{position:relative;width:48px;height:28px;flex:none;display:inline-block}
+.sw input{position:absolute;inset:-8px;opacity:0;width:calc(100% + 16px);height:calc(100% + 16px);margin:0;z-index:1;cursor:pointer;max-width:none}
+.sw i{position:absolute;inset:0;background:#4a4a4a;border-radius:99px;transition:.2s}
+.sw i:after{content:"";position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s}
+.sw input:checked+i{background:var(--g)}.sw input:checked+i:after{transform:translateX(20px)}
+/* lock screen */
+.lk{position:fixed;inset:0;background:var(--bg);z-index:20;display:flex;align-items:center;justify-content:center;padding:calc(20px + env(safe-area-inset-top)) 20px calc(20px + env(safe-area-inset-bottom));overflow:auto}
+.lkb{width:100%;max-width:320px;text-align:center}
+.lkb h1{margin:8px 0 4px}.lkb .lg{font-size:48px}
+.dots{display:flex;gap:14px;justify-content:center;margin:18px 0 8px;height:16px}
+.dots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--m)}.dots i.f{background:var(--g);border-color:var(--g)}
+.kp{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+.kp button{height:66px;border-radius:22px;border:0;background:var(--c2);color:var(--t);font:inherit;font-size:26px;font-weight:600}
+.kp button:active{background:var(--gd)}.kp .ok{background:var(--g);color:#fff}
 </style>
 </head>
 <body>
 <div id="ap" class="w"></div>
-<nav id="nv"></nav>
-<button class="fab" id="fab" aria-label="Tambah">+</button>
+<nav id="nv" hidden></nav>
+<button class="fab" id="fab" aria-label="Tambah" hidden>+</button>
 <div class="md" id="md"><div id="mb"></div></div>
+<div class="lk" id="lk" hidden></div>
 
 <script>
-// Tempel URL Web App Apps Script di sini (berakhiran /exec)
+// URL Web App Apps Script (berakhiran /exec). Ganti jika Anda deploy ulang dengan URL baru.
 const API='https://script.google.com/macros/s/AKfycbwsydprPvuZ8Y0gBVPBUdaFF1nPN45H6HRuAKUhZgGLXlhTwEbLRH8QMDn-sqQwvdTH/exec';
 
 const $=s=>document.querySelector(s);
-const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const rp=n=>(n<0?'-':'')+'Rp'+Math.abs(Math.round(n)).toLocaleString('id-ID');
 const BL=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 const COL=['#f59e0b','#eab308','#22c55e','#14b8a6','#ec4899','#a855f7','#3b82f6','#ef4444'];
@@ -74,31 +102,79 @@ const ICO=[[/makan|food|minum/i,'🍔'],[/transport|bensin|ojek/i,'🚌'],[/groc
   [/hibur|entertain|game/i,'🎬'],[/keluarga|family/i,'👨‍👩‍👧'],[/shop|belanja/i,'🛍️'],[/gaji|salary/i,'💼'],[/bonus|hadiah/i,'🎁']];
 const kcol=n=>COL[[...String(n)].reduce((a,c)=>a+c.charCodeAt(0),0)%8];
 const emj=n=>(ICO.find(([r])=>r.test(n))||[0,'🏷️'])[1];
-const ic=c=>`<div class="ic" style="background:${kcol(c.nama)}33">${emj(c.nama)}</div>`;
-const lgo=b=>b.logo?`<img class="ic" src="${esc(b.logo)}" alt="">`:`<div class="ic" style="background:${kcol(b.nama)}33;color:${kcol(b.nama)}">${esc(String(b.nama||'?')[0])}</div>`;
+const ic=c=>`<div class="ic" style="background:${kcol(c.id||c.nama)}33">${esc(c.ikon||emj(c.nama))}</div>`;
+const lgo=b=>b.logo?`<img class="ic" src="${esc(b.logo)}" alt="">`:`<div class="ic" style="background:${kcol(b.id||b.nama)}33;color:${kcol(b.id||b.nama)}">${esc(String(b.nama||'?')[0])}</div>`;
 const today=()=>new Date().toLocaleDateString('sv');
+const sw=(on,h)=>`<label class="sw" onclick="event.stopPropagation()"><input type="checkbox" ${on?'checked':''} onchange="${h}"><i></i></label>`;
+const EMPTY={banks:[],cats:[],trx:[],ang:[],aset:[],utang:[],rutin:[]};
 
-let S={banks:[],cats:[],trx:[],ang:[],aset:[],utang:[]},tab='trx',sub='bersih',ym=today().slice(0,7),hide=false,F={};
-const bn=i=>(S.banks.find(b=>b.id===i)||{nama:'(dompet dihapus)'}).nama;
+let S={...EMPTY},tab='trx',sub='bersih',ym=today().slice(0,7),hide=false,F={},R={},LG,LGP,PIN='',pb='',busy=false,hid=0;
+try{PIN=sessionStorage.getItem('pin')||''}catch(e){}
+const bn=i=>(S.banks.find(b=>b.id==i)||{nama:'(dompet dihapus)'}).nama;
 const mt=()=>S.trx.filter(t=>String(t.tanggal).startsWith(ym));
 const sum=(l,tp)=>l.filter(t=>t.tipe==tp).reduce((a,t)=>a+Number(t.jumlah),0);
-const total=()=>S.banks.reduce((a,b)=>a+Number(b.saldo),0);
+const bTot=()=>S.banks.reduce((a,b)=>a+Number(b.saldo),0);
+const aTot=()=>S.aset.filter(a=>a.aktif!==false).reduce((a,x)=>a+Number(x.nilai),0);
+const total=()=>bTot()+aTot();   // saldo dompet + aset yang aktif
 
-let err='';
-const banner=()=>err?`<div class="card" style="border-color:var(--r)"><b class="out">Belum terhubung ke database</b>
-  <p class="mt">${API.startsWith('GANTI')?'URL API belum diisi. Tempel URL Web App (berakhiran /exec) di baris const API pada index.html.':esc(err)+'. Pastikan URL benar dan Web App di-deploy dengan akses Anyone.'}</p>
-  <button class="sv" style="margin-top:8px" onclick="init()">Coba lagi</button></div>`:'';
+/* ---------- API & kunci PIN ---------- */
 async function api(a,d={}){
-  const r=await fetch(API,{method:'POST',body:JSON.stringify({a,...d})});
-  const j=await r.json();if(j.err)throw Error(j.err);S=j;return j.r;
+  const r=await fetch(API,{method:'POST',body:JSON.stringify({a,pin:PIN,...d})});
+  const j=await r.json();
+  if(j.err){const e=Error(j.err);e.auth=!!j.auth;throw e}
+  S={...EMPTY,...j};return j.r;
 }
-async function run(a,d){try{await api(a,d);closeM();draw()}catch(e){alert(e.message)}}
+function fail(e){if(e.auth)lock(e.message);else alert(e.message)}
+async function run(a,d,btn){
+  const t=btn&&btn.textContent;
+  if(btn){btn.disabled=true;btn.textContent='Menyimpan…'}
+  try{await api(a,d);closeM();draw();return true}
+  catch(e){fail(e);if(btn){btn.disabled=false;btn.textContent=t}return false}
+}
 async function init(){
+  if(!PIN)return lockUI();
   $('#ap').innerHTML='<p class="mt">Memuat data…</p>';
   try{await api('getAll');draw()}
-  catch(e){$('#ap').innerHTML=`<div class="card"><b class="out">Gagal memuat data</b><p class="mt">${esc(e.message)}. Pastikan URL API di index.html sudah benar dan Web App di-deploy dengan akses Anyone.</p></div>`}
+  catch(e){
+    if(e.auth)return lock(e.message);
+    $('#ap').innerHTML=`<div class="card"><b class="out">Gagal memuat data</b><p class="mt">${esc(e.message)}. Pastikan URL API di index.html benar dan Web App di-deploy dengan akses Anyone.</p>
+      <button class="sv" style="margin-top:8px" onclick="init()">Coba lagi</button></div>`;
+  }
 }
+function lock(msg=''){
+  PIN='';pb='';try{sessionStorage.removeItem('pin')}catch(e){}
+  S={...EMPTY};closeM();$('#ap').innerHTML='';$('#nv').hidden=true;$('#fab').hidden=true;lockUI(msg);
+}
+function lockUI(msg='',bad=true){
+  $('#lk').hidden=false;
+  const keys=[1,2,3,4,5,6,7,8,9,'<',0,'ok'];
+  $('#lk').innerHTML=`<div class="lkb"><div class="lg">🐷</div><h1>Celengan</h1><p class="mt" style="margin:0">Masukkan PIN</p>
+    <div class="dots">${[...Array(Math.max(4,pb.length))].map((_,i)=>`<i class="${i<pb.length?'f':''}"></i>`).join('')}</div>
+    <p class="${bad?'out':'mt'}" style="min-height:22px;margin:6px 0">${esc(msg)}</p>
+    <div class="kp">${keys.map(k=>`<button class="${k=='ok'?'ok':''}" onclick="kp('${k}')" aria-label="${k=='<'?'Hapus':k=='ok'?'Masuk':k}">${k=='<'?'⌫':k=='ok'?'✓':k}</button>`).join('')}</div></div>`;
+}
+function kp(k){
+  if(busy)return;
+  if(k=='ok')return submitPin();
+  if(k=='<')pb=pb.slice(0,-1);else if(pb.length<8)pb+=k;
+  lockUI();
+}
+async function submitPin(){
+  if(!pb||busy)return;
+  busy=true;PIN=pb;lockUI('Memeriksa…',false);
+  try{await api('login');try{sessionStorage.setItem('pin',PIN)}catch(e){}pb='';$('#lk').hidden=true;draw()}
+  catch(e){PIN='';pb='';lockUI(e.auth?e.message:'Gagal terhubung: '+e.message)}
+  busy=false;
+}
+addEventListener('keydown',e=>{
+  if($('#lk').hidden)return;
+  if(/^\d$/.test(e.key))kp(e.key);else if(e.key=='Backspace')kp('<');else if(e.key=='Enter')kp('ok');
+});
+document.addEventListener('visibilitychange',()=>{ // kunci otomatis setelah 3 menit di latar belakang
+  if(document.hidden)hid=Date.now();else if(PIN&&hid&&Date.now()-hid>180000)lock();
+});
 
+/* ---------- komponen ---------- */
 function chips(){
   const n=new Date(),a=[];
   for(let i=11;i>=0;i--)a.push(new Date(n.getFullYear(),n.getMonth()-i,1));
@@ -115,12 +191,13 @@ const row=t=>{
 };
 const donut=(l,tipe,judul)=>{
   const m={};
-  l.filter(t=>t.tipe==tipe).forEach(t=>{const k=(S.cats.find(c=>c.id==t.kategori)||{nama:'Tanpa kategori'}).nama;m[k]=(m[k]||0)+Number(t.jumlah)});
-  const e=Object.entries(m).sort((a,b)=>b[1]-a[1]),tot=e.reduce((a,x)=>a+x[1],0);let c=0;
-  const g=e.map(([k,v])=>{const s=c;c+=v/tot*100;return `${kcol(k)} ${s}% ${c}%`}).join(',');
+  l.filter(t=>t.tipe==tipe).forEach(t=>{const c=S.cats.find(c=>c.id==t.kategori)||{id:'?',nama:'Tanpa kategori'};
+    (m[c.id]=m[c.id]||{c,v:0}).v+=Number(t.jumlah)});
+  const e=Object.values(m).sort((a,b)=>b.v-a.v),tot=e.reduce((a,x)=>a+x.v,0);let cu=0;
+  const g=e.map(({c,v})=>{const s=cu;cu+=v/tot*100;return `${kcol(c.id)} ${s}% ${cu}%`}).join(',');
   return `<div class="card"><div class="rw"><b>${judul}</b><b>${rp(tot)}</b></div>
     ${tot?`<div class="pie" style="background:conic-gradient(${g})"></div>`:'<p class="mt" style="text-align:center;padding:24px 0">Tidak ada data bulan ini</p>'}
-    ${e.map(([k,v])=>`<div class="it"><span class="dot" style="background:${kcol(k)}"></span><span class="g">${esc(k)}</span><span>${Math.round(v/tot*100)}%</span><b>${rp(v)}</b></div>`).join('')}</div>`;
+    ${e.map(({c,v})=>`<div class="it"><span class="dot" style="background:${kcol(c.id)}"></span><span class="g">${esc(c.nama)}</span><span>${Math.round(v/tot*100)}%</span><b>${rp(v)}</b></div>`).join('')}</div>`;
 };
 
 const V={
@@ -128,7 +205,8 @@ const V={
     const l=mt(),h=x=>hide?'Rp •••••':rp(x),days=[...new Set(l.map(x=>x.tanggal))].sort().reverse();
     return chips()+`<div class="hero"><small>Total saldo</small>
       <div class="big">${h(total())}<button class="eye" onclick="hide=!hide;draw()" aria-label="Tampilkan atau sembunyikan saldo">${hide?'🙈':'👁'}</button></div>
-      <div class="pp"><div><small>Pemasukan</small><b>${h(sum(l,'masuk'))}</b></div><div><small>Pengeluaran</small><b>${h(sum(l,'keluar'))}</b></div></div></div>`+
+      <div class="pp"><div><small>Pemasukan</small><b>${h(sum(l,'masuk'))}</b></div><div><small>Pengeluaran</small><b>${h(sum(l,'keluar'))}</b></div></div>
+      <small style="display:block;margin-top:10px">Dompet ${h(bTot())} + Aset aktif ${h(aTot())}</small></div>`+
       (days.map(d=>`<div class="day">${new Date(d+'T00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long'})}</div>`+l.filter(x=>x.tanggal==d).map(row).join('')).join('')+
       (l.length?'<p class="mt" style="font-size:12px;margin-top:16px">Ketuk transaksi untuk menghapus.</p>':
       '<div class="card empty"><b>Belum ada transaksi</b><p class="mt">Tambahkan pemasukan atau pengeluaran pertama Anda. Hanya butuh hitungan detik.</p></div>'));
@@ -147,29 +225,37 @@ const V={
     const l=mt().filter(t=>t.tipe=='keluar'),sp=k=>l.filter(t=>t.kategori==k).reduce((a,t)=>a+Number(t.jumlah),0),
       A=S.ang.filter(a=>S.cats.find(c=>c.id==a.kategori)),tb=A.reduce((a,x)=>a+Number(x.jumlah),0),ts=A.reduce((a,x)=>a+sp(x.kategori),0),
       cur=ym==today().slice(0,7),hl=new Date(+ym.slice(0,4),+ym.slice(5),0).getDate()-new Date().getDate(),
-      bar=(p,o)=>`<div class="stk"><i style="width:${Math.min(p,100)}%;background:${o?'var(--r)':'var(--g)'}"></i></div>`;
+      st=(s,b)=>s>b?'over':s>=b*.8?'warn':'ok',   // 80% ke atas = kuning, lewat 100% = merah
+      CL={over:'var(--r)',warn:'var(--y)',ok:'var(--g)'},
+      bar=(p,s)=>`<div class="stk"><i style="width:${Math.min(p,100)}%;background:${CL[s]}"></i></div>`,
+      ts_=st(ts,tb),tp=Math.round(ts/(tb||1)*100);
     return chips()+`<div class="card"><div class="rw"><b>Anggaran</b><button class="x" style="color:var(--g)" onclick="angForm()">Atur</button></div>`+
       (A.length?`${cur?`<small class="mt">${hl} hari tersisa</small>`:''}
       <div class="rw" style="margin-top:10px"><div><small class="mt">Terpakai sejauh ini</small><b style="display:block;font-size:20px">${rp(ts)}</b></div><div style="text-align:right"><small class="mt">Total anggaran</small><b style="display:block;font-size:20px">${rp(tb)}</b></div></div>
-      ${bar(ts/tb*100,ts>tb)}<p class="${ts>tb?'out':''}">${ts>tb?`Melebihi anggaran ${rp(ts-tb)}.`:`Bagus! Anda memiliki <b class="in">${rp(tb-ts)}</b> tersisa.`}</p>
-      ${A.map(a=>{const c=S.cats.find(x=>x.id==a.kategori),s=sp(a.kategori),o=s>a.jumlah;
-        return `<div class="it" style="align-items:flex-start" onclick="angForm('${a.kategori}')">${ic(c)}<div class="g"><b>${esc(c.nama)}</b><small class="${o?'out':'in'}">${o?'Melebihi '+rp(s-a.jumlah):rp(a.jumlah-s)+' tersisa'}</small>${bar(s/a.jumlah*100,o)}</div><div style="text-align:right"><b>${rp(s)}</b><small>dari ${rp(a.jumlah)}</small></div></div>`}).join('')}`
+      ${bar(ts/tb*100,ts_)}<p class="${ts_=='over'?'out':ts_=='warn'?'warn':''}">${ts_=='over'?`Melebihi anggaran ${rp(ts-tb)}.`:ts_=='warn'?`Hati-hati, ${tp}% sudah terpakai. Sisa <b>${rp(tb-ts)}</b>.`:`Bagus! Anda memiliki <b class="in">${rp(tb-ts)}</b> tersisa.`}</p>
+      ${A.map(a=>{const c=S.cats.find(x=>x.id==a.kategori),s=sp(a.kategori),q=st(s,a.jumlah),p=Math.round(s/a.jumlah*100);
+        return `<div class="it" style="align-items:flex-start" onclick="angForm('${a.kategori}')">${ic(c)}<div class="g"><b>${esc(c.nama)}</b>
+          <small class="${q=='over'?'out':q=='warn'?'warn':'in'}">${q=='over'?'Melebihi '+rp(s-a.jumlah):q=='warn'?'⚠ '+p+'% terpakai, sisa '+rp(a.jumlah-s):rp(a.jumlah-s)+' tersisa'}</small>${bar(p,q)}</div>
+          <div style="text-align:right"><b>${rp(s)}</b><small>dari ${rp(a.jumlah)}</small></div></div>`}).join('')}`
       :'<p class="mt">Belum ada anggaran. Tekan Atur untuk menetapkan batas per kategori.</p>')+`</div>`;
   },
   bersih(){
-    const sa=S.aset.reduce((a,x)=>a+Number(x.nilai),0),su=t=>S.utang.filter(u=>u.tipe==t).reduce((a,u)=>a+Number(u.sisa),0),
-      pj=su('pinjam'),bg=su('beri'),sl=total(),nb=sl+sa+bg-pj,d=(sl+sa+pj)||1;
+    const sb=bTot(),sa=aTot(),off=S.aset.filter(a=>a.aktif===false).reduce((a,x)=>a+Number(x.nilai),0),
+      su=t=>S.utang.filter(u=>u.tipe==t).reduce((a,u)=>a+Number(u.sisa),0),
+      pj=su('pinjam'),bg=su('beri'),nb=sb+sa+bg-pj,d=(sb+sa+pj)||1;
     return `<div class="hero"><small>Nilai bersih</small><div class="big">${rp(nb)}</div></div>
-      <div class="card">${[['Total saldo',sl,''],['Total aset',sa,''],['Dipinjamkan',bg,'in'],['Total utang',-pj,'out']].map(([k,v,c])=>`<div class="it"><span class="g mt">${k}</span><b class="${c}">${rp(v)}</b></div>`).join('')}
-      <div class="stk"><i style="width:${sl/d*100}%;background:#6aa0d6"></i><i style="width:${sa/d*100}%;background:var(--g)"></i><i style="width:${pj/d*100}%;background:var(--r)"></i></div>
-      <small class="mt">Akun ${Math.round(sl/d*100)}%, Aset ${Math.round(sa/d*100)}%, Utang ${Math.round(pj/d*100)}%</small></div>`;
+      <div class="card">${[['Saldo dompet',sb,''],['Aset aktif',sa,''],['Dipinjamkan',bg,'in'],['Total utang',-pj,'out']].map(([k,v,c])=>`<div class="it"><span class="g mt">${k}</span><b class="${c}">${rp(v)}</b></div>`).join('')}
+      <div class="stk"><i style="width:${sb/d*100}%;background:#6aa0d6"></i><i style="width:${sa/d*100}%;background:var(--g)"></i><i style="width:${pj/d*100}%;background:var(--r)"></i></div>
+      <small class="mt">Dompet ${Math.round(sb/d*100)}%, Aset ${Math.round(sa/d*100)}%, Utang ${Math.round(pj/d*100)}%</small>
+      ${off?`<p class="mt" style="font-size:12px;margin:10px 0 0">Aset yang dimatikan (${rp(off)}) tidak dihitung.</p>`:''}</div>`;
   },
   aset(){
-    const g={},t=S.aset.reduce((a,x)=>a+Number(x.nilai),0);
+    const g={},t=aTot(),n=S.aset.filter(a=>a.aktif!==false).length;
     S.aset.forEach(a=>{const k=a.grup||'Lainnya';(g[k]=g[k]||[]).push(a)});
-    return `<div class="hero"><small>Total nilai aset</small><div class="big">${rp(t)}</div></div>`+
-      (Object.entries(g).map(([k,l])=>`<div class="card"><div class="rw"><b>${esc(k)}</b><b>${rp(l.reduce((a,x)=>a+Number(x.nilai),0))}</b></div>
-      ${l.map(a=>`<div class="it" onclick="asetForm('${a.id}')">${lgo(a)}<div class="g"><b>${esc(a.nama)}</b></div><div style="text-align:right"><b>${rp(a.nilai)}</b><small class="in">${Math.round(a.nilai/t*100)}%</small></div></div>`).join('')}</div>`).join('')||
+    return `<div class="hero"><small>Total nilai aset yang dihitung</small><div class="big">${rp(t)}</div><small>${n} dari ${S.aset.length} aset aktif. Geser tombol untuk menghitung atau tidak ke nilai bersih dan saldo.</small></div>`+
+      (Object.entries(g).map(([k,l])=>`<div class="card"><div class="rw"><b>${esc(k)}</b><b>${rp(l.filter(a=>a.aktif!==false).reduce((a,x)=>a+Number(x.nilai),0))}</b></div>
+      ${l.map(a=>{const o=a.aktif!==false;return `<div class="it" onclick="asetForm('${a.id}')">${lgo(a)}<div class="g" style="${o?'':'opacity:.5'}"><b>${esc(a.nama)}</b><small class="${o?'in':''}">${o?(t>0?Math.round(a.nilai/t*100)+'% dari aset aktif':'Dihitung'):'Tidak dihitung'}</small></div>
+        <b style="${o?'':'opacity:.5'}">${rp(a.nilai)}</b>${sw(o,`togA('${a.id}',this.checked)`)}</div>`}).join('')}</div>`).join('')||
       '<div class="card empty"><b>Belum ada aset</b><p class="mt">Catat emas, investasi, atau properti dengan tombol +.</p></div>');
   },
   utang(){
@@ -181,18 +267,32 @@ const V={
       <div style="flex:1"><small class="mt">Dipinjamkan</small><b class="in" style="display:block;font-size:20px">${rp(s(L('beri')))}</b></div></div>`+
       (S.utang.map(it).join('')||'<div class="card empty"><b>Belum ada utang</b><p class="mt">Lacak pinjaman dan utang Anda dengan tombol +.</p></div>');
   },
-  akun(){
-    return `<h1>Akun</h1><div class="chips">${[['bersih','Nilai bersih'],['dompet','Dompet'],['aset','Aset'],['utang','Utang']].map(([k,l])=>`<button class="chip ${sub==k?'on':''}" onclick="sub='${k}';draw()">${l}</button>`).join('')}</div>`+V[sub]();
-  },
   dompet(){
-    return `<div class="hero"><small>Total saldo</small><div class="big">${rp(total())}</div><small>${S.banks.length} dompet</small></div>
-      <div class="card">${S.banks.map(b=>`<div class="it" onclick="bankForm('${b.id}')">${lgo(b)}<div class="g"><b>${esc(b.nama)}</b></div><b>${rp(b.saldo)}</b></div>`).join('')||
-      '<p class="mt">Belum ada dompet. Tekan + untuk menambah bank atau tunai.</p>'}</div>
-      <h3>Kategori</h3>`+['keluar','masuk'].map(j=>`<div class="card"><b>${j=='masuk'?'Pemasukan':'Pengeluaran'}</b>
-      ${S.cats.filter(c=>c.tipe==j).map(c=>`<div class="it">${ic(c)}<span class="g">${esc(c.nama)}</span><button class="x" onclick="if(confirm('Hapus kategori ini?'))run('delKat',{id:'${c.id}'})">Hapus</button></div>`).join('')}</div>`).join('');
+    return `<div class="hero"><small>Total saldo dompet</small><div class="big">${rp(bTot())}</div><small>${S.banks.length} dompet. Ketuk dompet untuk mengedit.</small></div>
+      <div class="card">${S.banks.map(b=>`<div class="it" onclick="bankForm('${b.id}')">${lgo(b)}<div class="g"><b>${esc(b.nama)}</b><small>${esc(b.tipe||'Bank')}${b.rek?' - '+esc(b.rek):''}</small></div><b>${rp(b.saldo)}</b></div>`).join('')||
+      '<p class="mt">Belum ada dompet. Tekan + untuk menambah bank atau tunai.</p>'}</div>`;
+  },
+  kat(){
+    return `<div class="card"><small class="mt">Ketuk kategori untuk mengubah nama atau ikon. Tekan + untuk menambah.</small></div>`+
+      ['keluar','masuk'].map(j=>`<div class="card"><div class="rw"><b>${j=='masuk'?'Pemasukan':'Pengeluaran'}</b><button class="x" style="color:var(--g)" onclick="katForm('','${j}')">+ Tambah</button></div>
+      ${S.cats.filter(c=>c.tipe==j).map(c=>`<div class="it" onclick="katForm('${c.id}')">${ic(c)}<span class="g">${esc(c.nama)}</span><span class="mt">Edit</span></div>`).join('')||'<p class="mt">Belum ada kategori.</p>'}</div>`).join('');
+  },
+  rutin(){
+    return `<div class="card"><small class="mt">Transaksi di sini dibuat otomatis setiap bulan pada tanggalnya (dicek tiap hari), dan saldo dompet ikut berubah. Cocok untuk gaji atau cicilan.</small></div>`+
+      (S.rutin.map(r=>{
+        const k=S.cats.find(c=>c.id==r.kategori),m=r.tipe=='masuk',tk=String(r.terakhir||'');
+        return `<div class="card" onclick="rutinForm('${r.id}')" style="${r.aktif?'':'opacity:.6'}"><div class="rw"><div class="it" style="padding:0;flex:1">${ic(k||{nama:'?'})}
+          <div class="g"><b>${esc(r.nama)}</b><small>Tiap tanggal ${esc(r.hari)} - ${esc(bn(r.bank))}</small></div></div>
+          <b class="${m?'in':'out'}">${m?'+':'-'}${rp(r.jumlah)}</b></div>
+          <div class="rw" style="margin-top:8px"><small class="mt">${tk?'Terakhir: '+BL[+tk.slice(5,7)-1]+' '+tk.slice(0,4):'Belum pernah berjalan'}</small>${sw(r.aktif,`togR('${r.id}',this.checked)`)}</div></div>`}).join('')||
+      '<div class="card empty"><b>Belum ada transaksi otomatis</b><p class="mt">Tekan + untuk menambah, misalnya gaji tiap tanggal 25.</p></div>');
+  },
+  akun(){
+    return `<div class="rw"><h1>Akun</h1><button class="x" style="color:var(--m)" onclick="lock()">🔒 Kunci</button></div><div class="chips">${[['bersih','Nilai bersih'],['dompet','Dompet'],['aset','Aset'],['utang','Utang'],['kat','Kategori'],['rutin','Otomatis']].map(([k,l])=>`<button class="chip ${sub==k?'on':''}" onclick="sub='${k}';draw()">${l}</button>`).join('')}</div>`+V[sub]();
   }
 };
 function draw(){
+  $('#nv').hidden=false;
   $('#nv').innerHTML=[['trx','🧾','Transaksi'],['dash','📊','Dasbor'],['ring','📈','Ringkasan'],['akun','👛','Akun']]
     .map(([k,i,l])=>`<button class="${tab==k?'on':''}" onclick="tab='${k}';draw()"><span>${i}</span>${l}</button>`).join('');
   $('#ap').innerHTML=V[tab]();
@@ -205,7 +305,9 @@ function modal(t,b,hd=''){
   $('#md').classList.add('o');
 }
 function closeM(){$('#md').classList.remove('o')}
+const del=(a,id,t)=>`<p style="text-align:center"><button class="x" onclick="if(confirm('${t}'))run('${a}',{id:'${id}'})">Hapus</button></p>`;
 
+/* ---------- transaksi ---------- */
 function trxForm(){
   if(!S.banks.length)return alert('Tambah dompet dulu di tab Akun.');
   F={tipe:'keluar',bank:S.banks[0].id,bank2:(S.banks[1]||S.banks[0]).id,kat:'',jumlah:'',tanggal:today(),catatan:''};
@@ -216,7 +318,7 @@ function fr(){
   if(!tr&&!ks.find(c=>c.id==F.kat))F.kat=ks[0]?ks[0].id:'';
   const bo=v=>S.banks.map(b=>`<option value="${b.id}" ${b.id==v?'selected':''}>${esc(b.nama)} (${rp(b.saldo)})</option>`).join('');
   modal('Tambah transaksi',
-    (tr?'':`<p class="lb">Kategori</p><div class="cg">${ks.map(c=>`<button class="ch ${c.id==F.kat?'on':''}" onclick="F.kat='${c.id}';fr()">${emj(c.nama)} ${esc(c.nama)}</button>`).join('')}<button class="ch" onclick="newKat()">+ Baru</button></div>`)+
+    (tr?'':`<p class="lb">Kategori</p><div class="cg">${ks.map(c=>`<button class="ch ${c.id==F.kat?'on':''}" onclick="F.kat='${c.id}';fr()">${esc(c.ikon||emj(c.nama))} ${esc(c.nama)}</button>`).join('')}<button class="ch" onclick="newKat()">+ Baru</button></div>`)+
     `<div class="fr" style="margin-top:12px"><span>${tr?'Dari':'Akun'}</span><select onchange="F.bank=this.value">${bo(F.bank)}</select></div>`+
     (tr?`<div class="fr"><span>Ke</span><select onchange="F.bank2=this.value">${bo(F.bank2)}</select></div>`:'')+
     `<div class="fr"><span>Tanggal</span><input type="date" value="${F.tanggal}" onchange="F.tanggal=this.value"></div>
@@ -227,87 +329,157 @@ function fr(){
 }
 async function newKat(){
   const n=prompt('Nama kategori baru');if(!n)return;
-  try{await api('saveKat',{nama:n,tipe:F.tipe});F.kat=S.cats.filter(c=>c.tipe==F.tipe).pop().id;fr()}catch(e){alert(e.message)}
+  try{await api('saveKat',{nama:n,tipe:F.tipe});F.kat=S.cats.filter(c=>c.tipe==F.tipe).pop().id;fr()}catch(e){fail(e)}
 }
 function saveTrx(btn){
   const tr=F.tipe=='transfer',j=Number(F.jumlah);
   if(!(j>0))return alert('Isi jumlah lebih dari 0');
   if(tr&&F.bank==F.bank2)return alert('Dompet asal dan tujuan tidak boleh sama');
-  btn.disabled=true;btn.textContent='Menyimpan…';
   ym=F.tanggal.slice(0,7);tab='trx';
-  run('addTrx',{tipe:F.tipe,bank:F.bank,bank2:tr?F.bank2:'',kategori:tr?'':F.kat,jumlah:j,tanggal:F.tanggal,catatan:F.catatan});
+  run('addTrx',{tipe:F.tipe,bank:F.bank,bank2:tr?F.bank2:'',kategori:tr?'':F.kat,jumlah:j,tanggal:F.tanggal,catatan:F.catatan},btn);
 }
 
+/* ---------- dompet / bank ---------- */
 function bankForm(i){
-  const b=S.banks.find(x=>x.id==i)||{nama:'',saldo:0};
+  const b=S.banks.find(x=>x.id==i)||{nama:'',tipe:'Bank',rek:'',saldo:'',logo:''};
+  LG=undefined;LGP=null;
   modal(i?'Edit dompet':'Tambah dompet',
     `<div class="fr"><span>Nama</span><input id="bn" placeholder="BSI, Jago, Tunai" value="${esc(b.nama)}"></div>
+    <div class="fr"><span>Jenis</span><select id="bt">${['Bank','E-Wallet','Tunai'].map(x=>`<option ${x==(b.tipe||'Bank')?'selected':''}>${x}</option>`).join('')}</select></div>
+    <div class="fr"><span>No. rekening</span><input id="br" placeholder="Opsional" value="${esc(b.rek)}"></div>
     <div class="fr"><span>Saldo</span><input id="bs" type="number" inputmode="decimal" value="${b.saldo}"></div>
-    <div class="fr"><span>Logo</span><input id="bl" type="file" accept="image/*"></div>
+    <div class="fr"><span>Logo</span><input id="bl" type="file" accept="image/*" onchange="pickLogo(this)"></div>
+    ${b.logo?`<div class="fr"><span>Logo sekarang</span><span class="rw">${lgo(b)}<button class="x" onclick="LG='';this.closest('.fr').remove()">Hapus logo</button></span></div>`:''}
+    <p class="mt" style="font-size:12px;margin:10px 0 0">Mengubah saldo di sini tidak membuat catatan transaksi.</p>
     <button class="sv" onclick="saveBank('${i||''}',this)">Simpan</button>
-    ${i?`<p style="text-align:center"><button class="x" onclick="if(confirm('Hapus dompet ini?'))run('delBank',{id:'${i}'})">Hapus dompet</button></p>`:''}`);
+    ${i?del('delBank',i,'Hapus dompet ini? Transaksi lama tetap ada.'):''}`);
 }
-const shrink=f=>new Promise(ok=>{
+const shrink=f=>new Promise((ok,no)=>{
   const i=new Image();
-  i.onload=()=>{const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d'),s=Math.min(i.width,i.height);
-    x.drawImage(i,(i.width-s)/2,(i.height-s)/2,s,s,0,0,128,128);ok(c.toDataURL('image/png').split(',')[1])};
+  i.onload=()=>{const c=document.createElement('canvas');c.width=c.height=96;const x=c.getContext('2d'),s=Math.min(i.width,i.height);
+    x.drawImage(i,(i.width-s)/2,(i.height-s)/2,s,s,0,0,96,96);
+    let u=c.toDataURL('image/png');if(u.length>40000)u=c.toDataURL('image/jpeg',.7);
+    URL.revokeObjectURL(i.src);ok(u)};
+  i.onerror=()=>no(Error('Gambar tidak bisa dibaca'));
   i.src=URL.createObjectURL(f);
 });
+function pickLogo(inp){LG=undefined;LGP=inp.files[0]?shrink(inp.files[0]):null}
 async function saveBank(id,btn){
-  const d={id,nama:$('#bn').value.trim(),saldo:Number($('#bs').value)||0};
+  const d={id,nama:$('#bn').value.trim(),tipe:$('#bt').value,rek:$('#br').value.trim(),saldo:Number($('#bs').value)||0};
   if(!d.nama)return alert('Isi nama dompet');
-  btn.disabled=true;btn.textContent='Menyimpan…';
-  try{
-    const f=$('#bl').files[0];
-    if(f)d.logo=await api('logo',{data:await shrink(f),mime:'image/png'});
-    await run('saveBank',d);
-  }catch(e){alert(e.message);btn.disabled=false;btn.textContent='Simpan'}
+  btn.disabled=true;
+  try{if(LGP)d.logo=await LGP;else if(LG==='')d.logo=''}
+  catch(e){btn.disabled=false;return alert(e.message)}
+  run('saveBank',d,btn);
 }
-const FA={dompet:()=>bankForm(),aset:()=>asetForm(),utang:()=>utangForm()};
-const del=(a,id,t)=>`<p style="text-align:center"><button class="x" onclick="if(confirm('${t}'))run('${a}',{id:'${id}'})">Hapus</button></p>`;
 
+/* ---------- kategori ---------- */
+function katForm(id,tp){
+  const c=S.cats.find(x=>x.id==id)||{nama:'',tipe:tp||'keluar',ikon:''},
+    IK=['🍔','☕','🚌','⛽','🛒','🛍️','🧾','📱','🏠','💊','📚','🎬','🎁','💼','💰','🏷️'];
+  modal(id?'Edit kategori':'Tambah kategori',
+    `<div class="fr"><span>Nama</span><input id="kn" placeholder="Contoh: Makan" value="${esc(c.nama)}"></div>
+    <div class="fr"><span>Jenis</span><select id="kt" ${id?'disabled':''}><option value="keluar" ${c.tipe=='keluar'?'selected':''}>Pengeluaran</option><option value="masuk" ${c.tipe=='masuk'?'selected':''}>Pemasukan</option></select></div>
+    <div class="fr"><span>Ikon</span><input id="ki" placeholder="Emoji (opsional)" maxlength="8" value="${esc(c.ikon)}" style="width:150px"></div>
+    <div class="cg" style="margin-top:12px">${IK.map(e=>`<button class="ch" onclick="$('#ki').value='${e}'">${e}</button>`).join('')}</div>
+    <button class="sv" onclick="saveKatF('${id||''}',this)">Simpan</button>
+    ${id?del('delKat',id,'Hapus kategori ini? Anggarannya ikut terhapus dan transaksi lama menjadi Tanpa kategori.'):''}`);
+}
+function saveKatF(id,btn){
+  const nama=$('#kn').value.trim();
+  if(!nama)return alert('Isi nama kategori');
+  run('saveKat',{id,nama,tipe:$('#kt').value,ikon:$('#ki').value.trim()},btn);
+}
+
+/* ---------- anggaran ---------- */
 function angForm(kid){
   const a=S.ang.find(x=>x.kategori==kid),ks=S.cats.filter(c=>c.tipe=='keluar');
-  if(!ks.length)return alert('Tambah kategori pengeluaran dulu di Akun, tab Dompet.');
+  if(!ks.length)return alert('Tambah kategori pengeluaran dulu di Akun, tab Kategori.');
   modal('Anggaran bulanan',`<div class="fr"><span>Kategori</span><select id="ak">${ks.map(c=>`<option value="${c.id}" ${c.id==kid?'selected':''}>${esc(c.nama)}</option>`).join('')}</select></div>
     <div class="fr"><span>Batas per bulan</span><input id="aj" type="number" inputmode="decimal" value="${a?a.jumlah:''}"></div>
-    <button class="sv" onclick="saveAng()">Simpan</button>${a?del('delAng',a.id,'Hapus anggaran ini?'):''}`);
+    <p class="mt" style="font-size:12px">Warna berubah kuning saat 80% terpakai dan merah saat melebihi batas.</p>
+    <button class="sv" onclick="saveAng(this)">Simpan</button>${a?del('delAng',a.id,'Hapus anggaran ini?'):''}`);
 }
-function saveAng(){
+function saveAng(btn){
   const j=Number($('#aj').value);
   if(!(j>0))return alert('Isi batas lebih dari 0');
-  run('saveAng',{kategori:$('#ak').value,jumlah:j});
+  run('saveAng',{kategori:$('#ak').value,jumlah:j},btn);
 }
+
+/* ---------- aset ---------- */
 function asetForm(id){
-  const a=S.aset.find(x=>x.id==id)||{nama:'',nilai:'',grup:''};
+  const a=S.aset.find(x=>x.id==id)||{nama:'',nilai:'',grup:'',aktif:true};
   modal(id?'Edit aset':'Tambah aset',`<div class="fr"><span>Nama</span><input id="an" placeholder="Emas, Reksa dana" value="${esc(a.nama)}"></div>
     <div class="fr"><span>Nilai</span><input id="av" type="number" inputmode="decimal" value="${a.nilai}"></div>
     <div class="fr"><span>Kelompok</span><input id="ag" placeholder="Investasi" value="${esc(a.grup)}"></div>
-    <button class="sv" onclick="saveAset('${id||''}')">Simpan</button>${id?del('delAset',id,'Hapus aset ini?'):''}`);
+    <div class="fr"><span>Hitung ke nilai bersih dan saldo</span><label class="sw"><input id="aa" type="checkbox" ${a.aktif!==false?'checked':''}><i></i></label></div>
+    <button class="sv" onclick="saveAset('${id||''}',this)">Simpan</button>${id?del('delAset',id,'Hapus aset ini?'):''}`);
 }
-function saveAset(id){
-  const d={id,nama:$('#an').value.trim(),nilai:Number($('#av').value)||0,grup:$('#ag').value.trim()||'Lainnya'};
+function saveAset(id,btn){
+  const d={id,nama:$('#an').value.trim(),nilai:Number($('#av').value)||0,grup:$('#ag').value.trim()||'Lainnya',aktif:$('#aa').checked};
   if(!d.nama)return alert('Isi nama aset');
-  run('saveAset',d);
+  run('saveAset',d,btn);
 }
+async function togA(id,on){
+  const a=S.aset.find(x=>x.id==id);if(a)a.aktif=on;draw();
+  try{await api('toggleAset',{id,aktif:on});draw()}catch(e){fail(e);if(!e.auth)init()}
+}
+
+/* ---------- utang ---------- */
 function utangForm(){
   modal('Catat utang',`<div class="fr"><span>Jenis</span><select id="ut"><option value="pinjam">Saya meminjam</option><option value="beri">Saya meminjamkan</option></select></div>
     <div class="fr"><span>Nama</span><input id="un" placeholder="Nama orang"></div>
     <div class="fr"><span>Jumlah</span><input id="uj" type="number" inputmode="decimal"></div>
     <div class="fr"><span>Catatan</span><input id="uc" placeholder="Opsional"></div>
-    <button class="sv" onclick="saveUtang()">Simpan</button>`);
+    <button class="sv" onclick="saveUtang(this)">Simpan</button>`);
 }
-function saveUtang(){
+function saveUtang(btn){
   const d={tipe:$('#ut').value,nama:$('#un').value.trim(),jumlah:Number($('#uj').value),catatan:$('#uc').value};
   if(!d.nama||!(d.jumlah>0))return alert('Isi nama dan jumlah');
-  run('saveUtang',d);
+  run('saveUtang',d,btn);
 }
 function utangDetail(id){
   const u=S.utang.find(x=>x.id==id);
   modal(esc(u.nama),`<p class="mt">Sisa ${rp(u.sisa)} dari ${rp(u.jumlah)}</p>
     <div class="fr"><span>Jumlah dibayar</span><input id="uj" type="number" inputmode="decimal"></div>
-    <button class="sv" onclick="const j=Number($('#uj').value);j>0?run('bayarUtang',{id:'${id}',jumlah:j}):alert('Isi jumlah lebih dari 0')">Catat pembayaran</button>${del('delUtang',id,'Hapus catatan utang ini?')}`);
+    <button class="sv" onclick="const j=Number($('#uj').value);j>0?run('bayarUtang',{id:'${id}',jumlah:j},this):alert('Isi jumlah lebih dari 0')">Catat pembayaran</button>${del('delUtang',id,'Hapus catatan utang ini?')}`);
 }
+
+/* ---------- transaksi otomatis (gaji dll.) ---------- */
+function rutinForm(id){
+  if(!S.banks.length)return alert('Tambah dompet dulu di Akun, tab Dompet.');
+  const r=S.rutin.find(x=>x.id==id);
+  R=r?{...r}:{id:'',nama:'',tipe:'masuk',jumlah:'',hari:25,bank:S.banks[0].id,kategori:'',aktif:true};
+  rr();
+}
+function rr(){
+  const ks=S.cats.filter(c=>c.tipe==R.tipe);
+  if(!ks.find(c=>c.id==R.kategori))R.kategori=ks[0]?ks[0].id:'';
+  modal(R.id?'Edit otomatis':'Tambah otomatis',
+    `<div class="fr"><span>Nama</span><input placeholder="Gaji bulanan" value="${esc(R.nama)}" oninput="R.nama=this.value"></div>
+    <div class="fr"><span>Tiap tanggal</span><input type="number" inputmode="numeric" min="1" max="31" value="${esc(R.hari)}" oninput="R.hari=this.value" style="width:90px"></div>
+    <div class="fr"><span>Masuk ke dompet</span><select onchange="R.bank=this.value">${S.banks.map(b=>`<option value="${b.id}" ${b.id==R.bank?'selected':''}>${esc(b.nama)}</option>`).join('')}</select></div>
+    <div class="fr"><span>Kategori</span><select onchange="R.kategori=this.value">${ks.map(c=>`<option value="${c.id}" ${c.id==R.kategori?'selected':''}>${esc(c.nama)}</option>`).join('')||'<option value="">(belum ada)</option>'}</select></div>
+    <div class="fr"><span>Aktif</span><label class="sw"><input type="checkbox" ${R.aktif?'checked':''} onchange="R.aktif=this.checked"><i></i></label></div>
+    <p class="mt" style="font-size:12px">Tanggal 29 sampai 31 otomatis menyesuaikan akhir bulan yang lebih pendek. Jika tanggal bulan ini sudah lewat, mulai berjalan bulan depan.</p>
+    <button class="sv" onclick="saveRutin(this)">Simpan</button>${R.id?del('delRutin',R.id,'Hapus transaksi otomatis ini? Transaksi yang sudah tercatat tetap ada.'):''}`,
+    `<div class="seg">${[['masuk','Pemasukan'],['keluar','Pengeluaran']].map(([k,l])=>`<button class="${R.tipe==k?'on':''}" onclick="R.tipe='${k}';rr()">${l}</button>`).join('')}</div>
+    <input class="amt" type="number" inputmode="decimal" placeholder="0" value="${esc(R.jumlah)}" oninput="R.jumlah=this.value">`);
+}
+function saveRutin(btn){
+  const j=Number(R.jumlah),h=Math.round(Number(R.hari));
+  if(!String(R.nama).trim())return alert('Isi nama');
+  if(!(j>0))return alert('Isi jumlah lebih dari 0');
+  if(!(h>=1&&h<=31))return alert('Tanggal harus 1 sampai 31');
+  run('saveRutin',{id:R.id,nama:String(R.nama).trim(),tipe:R.tipe,jumlah:j,hari:h,bank:R.bank,kategori:R.kategori,aktif:R.aktif},btn);
+}
+async function togR(id,on){
+  const r=S.rutin.find(x=>x.id==id);if(r)r.aktif=on;draw();
+  try{await api('toggleRutin',{id,aktif:on});draw()}catch(e){fail(e);if(!e.auth)init()}
+}
+
+const FA={dompet:()=>bankForm(),aset:()=>asetForm(),utang:()=>utangForm(),kat:()=>katForm('','keluar'),rutin:()=>rutinForm()};
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 init();
 </script>
 </body>
