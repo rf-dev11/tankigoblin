@@ -47,7 +47,7 @@ nav{position:fixed;bottom:0;left:0;right:0;background:var(--c);display:flex;gap:
 nav button{flex:1;background:none;border:0;color:var(--m);padding:8px 0;font:inherit;font-size:12px;border-radius:18px;min-height:50px}
 nav span{display:block;font-size:20px}nav .on{background:var(--c2);color:var(--g);font-weight:700}
 .fab{position:fixed;right:18px;bottom:calc(92px + env(safe-area-inset-bottom));width:60px;height:60px;border-radius:20px;border:0;background:var(--g);color:#fff;font-size:34px;box-shadow:0 6px 18px #0bc78d55;z-index:4}
-.md{position:fixed;inset:0;background:var(--bg);z-index:9;overflow:auto;display:none;overscroll-behavior:contain}.md.o{display:block}
+.md{position:fixed;inset:0;background:var(--bg);z-index:9;overflow:auto;overscroll-behavior:contain;transform:translateY(100%);visibility:hidden;transition:transform .38s cubic-bezier(.32,.72,0,1),visibility 0s linear .38s}.md.o{transform:none;visibility:visible;transition:transform .38s cubic-bezier(.32,.72,0,1),visibility 0s}
 #mb{max-width:520px;margin:auto;padding-bottom:calc(30px + env(safe-area-inset-bottom))}
 .mh{background:#079a73;padding:calc(14px + env(safe-area-inset-top)) 16px 18px;color:#fff}
 .mh .tt{font-size:18px;font-weight:700}.mh .x{color:#fff;font-size:22px}
@@ -80,18 +80,63 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .kp{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
 .kp button{height:66px;border-radius:22px;border:0;background:var(--c2);color:var(--t);font:inherit;font-size:26px;font-weight:600}
 .kp button:active{background:var(--gd)}.kp .ok{background:var(--g);color:#fff}
+/* ---- animasi ala iOS ---- */
+:root{--ease:cubic-bezier(.32,.72,0,1);--spring:cubic-bezier(.34,1.56,.64,1)}
+button,.chip,.ch,.sv,.x{transition:transform .2s var(--ease),opacity .2s,background-color .25s,color .25s,border-color .25s}
+button:active{transform:scale(.95);opacity:.8}
+.sv:active{transform:scale(.98)}
+.fab{transition:transform .35s var(--spring),opacity .25s}
+.fab:active{transform:scale(.88);opacity:1}
+.fab.h{transform:scale(.3);opacity:0;pointer-events:none}
+.it[onclick]{transition:opacity .15s}.it[onclick]:active{opacity:.5}
+.card[onclick]{transition:transform .2s var(--ease),background-color .2s}.card[onclick]:active{transform:scale(.985);background:#2a2a2a}
+nav button span{transition:transform .35s var(--spring)}
+nav .on span{transform:translateY(-2px) scale(1.18)}
+nav:not([hidden]){animation:navin .45s var(--ease)}
+.sw i,.sw i:after{transition:background-color .25s,transform .3s var(--spring)}
+@keyframes inF{from{opacity:0;transform:translateX(30px)}}
+@keyframes inB{from{opacity:0;transform:translateX(-30px)}}
+@keyframes inU{from{opacity:0;transform:translateY(12px)}}
+@keyframes grow{from{transform:scaleX(0)}}
+@keyframes growY{from{transform:scaleY(0)}}
+@keyframes navin{from{transform:translateY(100%)}}
+@keyframes fade{from{opacity:0}}
+@keyframes pop{0%{transform:scale(.4)}60%{transform:scale(1.35)}100%{transform:scale(1)}}
+@keyframes shake{20%,60%{transform:translateX(-9px)}40%,80%{transform:translateX(9px)}}
+#ap.f{animation:inF .4s var(--ease)}
+#ap.b{animation:inB .4s var(--ease)}
+#ap.x>*{animation:inU .45s var(--ease) both}
+#ap.x>*:nth-child(2){animation-delay:.04s}#ap.x>*:nth-child(3){animation-delay:.08s}#ap.x>*:nth-child(4){animation-delay:.12s}
+#ap.x>*:nth-child(5){animation-delay:.16s}#ap.x>*:nth-child(n+6){animation-delay:.2s}
+#ap.x .stk i{transform-origin:left;animation:grow .7s var(--ease) .15s both}
+#ap.x .bars i{transform-origin:bottom;animation:growY .7s var(--ease) .15s both}
+.lk:not([hidden]){animation:fade .25s}
+.dots i{transition:background-color .15s,border-color .15s}
+.dots i.n{animation:pop .25s var(--spring)}
+.dots.sh{animation:shake .4s}
+/* pengaturan ala iOS */
+.nb{margin:0 0 2px}
+.bk{background:none;border:0;color:var(--g);font:inherit;font-size:17px;padding:8px 6px 8px 0;min-height:40px}
+.gl{color:var(--m);font-size:13px;text-transform:uppercase;letter-spacing:.04em;margin:18px 4px 8px}
+.grp{background:var(--c);border:1px solid var(--l);border-radius:20px;overflow:hidden}
+.row2{display:flex;align-items:center;gap:12px;padding:12px 14px;transition:background-color .2s}
+.row2+.row2{border-top:1px solid var(--l)}
+.row2:active{background:var(--c2)}
+.row2 .g{flex:1;min-width:0}
+.chev{color:var(--m);font-size:22px;line-height:1}
+@media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <div id="ap" class="w"></div>
 <nav id="nv" hidden></nav>
-<button class="fab" id="fab" aria-label="Tambah" hidden>+</button>
+<button class="fab h" id="fab" aria-label="Tambah">+</button>
 <div class="md" id="md"><div id="mb"></div></div>
 <div class="lk" id="lk" hidden></div>
 
 <script>
 // URL Web App Apps Script (berakhiran /exec). Ganti jika Anda deploy ulang dengan URL baru.
-const API='https://script.google.com/macros/s/AKfycbwUATNrOYZTnyv_T4QCwyfuSHFllkEDg-f2W88zOtSheAnC8AllebxStwy3UlZNAtmW/exec';
+const API='https://script.google.com/macros/s/AKfycbwsydprPvuZ8Y0gBVPBUdaFF1nPN45H6HRuAKUhZgGLXlhTwEbLRH8QMDn-sqQwvdTH/exec';
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -108,7 +153,7 @@ const today=()=>new Date().toLocaleDateString('sv');
 const sw=(on,h)=>`<label class="sw" onclick="event.stopPropagation()"><input type="checkbox" ${on?'checked':''} onchange="${h}"><i></i></label>`;
 const EMPTY={banks:[],cats:[],trx:[],ang:[],aset:[],utang:[],rutin:[]};
 
-let S={...EMPTY},tab='trx',sub='bersih',ym=today().slice(0,7),hide=false,F={},R={},LG,LGP,PIN='',pb='',busy=false,hid=0;
+let S={...EMPTY},tab='trx',sub='bersih',pg='',ym=today().slice(0,7),hide=false,F={},R={},LG,LGP,PIN='',pb='',busy=false,hid=0;
 try{PIN=sessionStorage.getItem('pin')||''}catch(e){}
 const bn=i=>(S.banks.find(b=>b.id==i)||{nama:'(dompet dihapus)'}).nama;
 const mt=()=>S.trx.filter(t=>String(t.tanggal).startsWith(ym));
@@ -134,7 +179,7 @@ async function run(a,d,btn){
 async function init(){
   if(!PIN)return lockUI();
   $('#ap').innerHTML='<p class="mt">Memuat data…</p>';
-  try{await api('getAll');draw()}
+  try{await api('getAll');draw('x')}
   catch(e){
     if(e.auth)return lock(e.message);
     $('#ap').innerHTML=`<div class="card"><b class="out">Gagal memuat data</b><p class="mt">${esc(e.message)}. Pastikan URL API di index.html benar dan Web App di-deploy dengan akses Anyone.</p>
@@ -143,13 +188,13 @@ async function init(){
 }
 function lock(msg=''){
   PIN='';pb='';try{sessionStorage.removeItem('pin')}catch(e){}
-  S={...EMPTY};closeM();$('#ap').innerHTML='';$('#nv').hidden=true;$('#fab').hidden=true;lockUI(msg);
+  S={...EMPTY};closeM();$('#ap').innerHTML='';$('#nv').hidden=true;$('#fab').classList.add('h');lockUI(msg);
 }
 function lockUI(msg='',bad=true){
   $('#lk').hidden=false;
   const keys=[1,2,3,4,5,6,7,8,9,'<',0,'ok'];
   $('#lk').innerHTML=`<div class="lkb"><div class="lg">🐷</div><h1>Celengan</h1><p class="mt" style="margin:0">Masukkan PIN</p>
-    <div class="dots">${[...Array(Math.max(4,pb.length))].map((_,i)=>`<i class="${i<pb.length?'f':''}"></i>`).join('')}</div>
+    <div class="dots ${msg&&bad?'sh':''}">${[...Array(Math.max(4,pb.length))].map((_,i)=>`<i class="${i<pb.length?'f':''} ${i==pb.length-1?'n':''}"></i>`).join('')}</div>
     <p class="${bad?'out':'mt'}" style="min-height:22px;margin:6px 0">${esc(msg)}</p>
     <div class="kp">${keys.map(k=>`<button class="${k=='ok'?'ok':''}" onclick="kp('${k}')" aria-label="${k=='<'?'Hapus':k=='ok'?'Masuk':k}">${k=='<'?'⌫':k=='ok'?'✓':k}</button>`).join('')}</div></div>`;
 }
@@ -162,7 +207,7 @@ function kp(k){
 async function submitPin(){
   if(!pb||busy)return;
   busy=true;PIN=pb;lockUI('Memeriksa…',false);
-  try{await api('login');try{sessionStorage.setItem('pin',PIN)}catch(e){}pb='';$('#lk').hidden=true;draw()}
+  try{await api('login');try{sessionStorage.setItem('pin',PIN)}catch(e){}pb='';$('#lk').hidden=true;draw('x')}
   catch(e){PIN='';pb='';lockUI(e.auth?e.message:'Gagal terhubung: '+e.message)}
   busy=false;
 }
@@ -287,18 +332,42 @@ const V={
           <div class="rw" style="margin-top:8px"><small class="mt">${tk?'Terakhir: '+BL[+tk.slice(5,7)-1]+' '+tk.slice(0,4):'Belum pernah berjalan'}</small>${sw(r.aktif,`togR('${r.id}',this.checked)`)}</div></div>`}).join('')||
       '<div class="card empty"><b>Belum ada transaksi otomatis</b><p class="mt">Tekan + untuk menambah, misalnya gaji tiap tanggal 25.</p></div>');
   },
+  set(){
+    const T={dompet:'Dompet',kat:'Kategori',rutin:'Transaksi otomatis'};
+    if(pg)return `<div class="nb"><button class="bk" onclick="back()">‹ Pengaturan</button></div><h1>${T[pg]}</h1>`+V[pg]();
+    const rw=([k,i,c,l,d])=>`<div class="row2" onclick="push('${k}')"><div class="ic" style="background:${c}33">${i}</div><span class="g">${l}</span><span class="mt">${d}</span><span class="chev">›</span></div>`;
+    return `<p class="gl" style="margin-top:4px">Data</p><div class="grp">${[
+      ['dompet','👛','#3b82f6','Dompet',S.banks.length+' dompet'],
+      ['kat','🏷️','#a855f7','Kategori',S.cats.length+' kategori'],
+      ['rutin','🔁','#0bc78d','Transaksi otomatis',S.rutin.filter(r=>r.aktif).length+' aktif']].map(rw).join('')}</div>
+      <p class="gl">Keamanan</p><div class="grp"><div class="row2" onclick="lock()"><div class="ic" style="background:#ef5b5b33">🔒</div><span class="g">Kunci aplikasi sekarang</span><span class="chev">›</span></div></div>
+      <p class="mt" style="font-size:12px;margin:10px 4px">PIN diubah langsung di tab Config pada Google Sheet.</p>`;
+  },
   akun(){
-    return `<div class="rw"><h1>Akun</h1><button class="x" style="color:var(--m)" onclick="lock()">🔒 Kunci</button></div><div class="chips">${[['bersih','Nilai bersih'],['dompet','Dompet'],['aset','Aset'],['utang','Utang'],['kat','Kategori'],['rutin','Otomatis']].map(([k,l])=>`<button class="chip ${sub==k?'on':''}" onclick="sub='${k}';draw()">${l}</button>`).join('')}</div>`+V[sub]();
+    const sb=sub=='set'&&pg;
+    return (sb?'':`<h1>Akun</h1><div class="chips">${[['bersih','Nilai bersih'],['aset','Aset'],['utang','Utang'],['set','Pengaturan']].map(([k,l])=>`<button class="chip ${sub==k?'on':''}" onclick="goSub('${k}')">${l}</button>`).join('')}</div>`)+V[sub]();
   }
 };
-function draw(){
+const NAV=[['trx','🧾','Transaksi'],['dash','📊','Dasbor'],['ring','📈','Ringkasan'],['akun','👛','Akun']];
+$('#nv').innerHTML=NAV.map(([k,i,l])=>`<button data-k="${k}" onclick="go('${k}')"><span>${i}</span>${l}</button>`).join('');
+const fkey=()=>sub=='set'?pg:sub;
+function draw(dir){   // dir: 'x' = muncul bertahap, 'f' = masuk dari kanan, 'b' = kembali dari kiri
   $('#nv').hidden=false;
-  $('#nv').innerHTML=[['trx','🧾','Transaksi'],['dash','📊','Dasbor'],['ring','📈','Ringkasan'],['akun','👛','Akun']]
-    .map(([k,i,l])=>`<button class="${tab==k?'on':''}" onclick="tab='${k}';draw()"><span>${i}</span>${l}</button>`).join('');
-  $('#ap').innerHTML=V[tab]();
-  const f=$('#fab');f.hidden=tab=='ring'||(tab=='akun'&&sub=='bersih');f.onclick=tab=='akun'?FA[sub]:()=>trxForm();
+  document.querySelectorAll('#nv button').forEach(b=>b.classList.toggle('on',b.dataset.k==tab));
+  const ap=$('#ap');ap.className='w';ap.innerHTML=V[tab]();
+  if(dir){void ap.offsetWidth;ap.classList.add(dir);scrollTo(0,0)}
+  const k=fkey(),f=$('#fab');
+  f.classList.toggle('h',tab=='ring'||(tab=='akun'&&!FA[k]));
+  f.onclick=tab=='akun'?FA[k]:()=>trxForm();
   const on=$('.chip.on');if(on)on.scrollIntoView({inline:'center',block:'nearest'});
 }
+function go(k){
+  if(k==tab){if(tab=='akun'&&sub=='set'&&pg){pg='';draw('b')}else scrollTo({top:0,behavior:'smooth'});return}
+  tab=k;draw('x');
+}
+function goSub(k){if(k==sub)return;sub=k;pg='';draw('x')}
+function push(p){pg=p;draw('f')}
+function back(){pg='';draw('b')}
 
 function modal(t,b,hd=''){
   $('#mb').innerHTML=`<div class="mh"><div class="rw"><button class="x" onclick="closeM()" aria-label="Tutup">✕</button><span class="tt">${t}</span><span style="width:34px"></span></div>${hd}</div><div class="w">${b}</div>`;
@@ -309,7 +378,7 @@ const del=(a,id,t)=>`<p style="text-align:center"><button class="x" onclick="if(
 
 /* ---------- transaksi ---------- */
 function trxForm(){
-  if(!S.banks.length)return alert('Tambah dompet dulu di tab Akun.');
+  if(!S.banks.length)return alert('Tambah dompet dulu di Akun, Pengaturan, Dompet.');
   F={tipe:'keluar',bank:S.banks[0].id,bank2:(S.banks[1]||S.banks[0]).id,kat:'',jumlah:'',tanggal:today(),catatan:''};
   fr();
 }
@@ -394,7 +463,7 @@ function saveKatF(id,btn){
 /* ---------- anggaran ---------- */
 function angForm(kid){
   const a=S.ang.find(x=>x.kategori==kid),ks=S.cats.filter(c=>c.tipe=='keluar');
-  if(!ks.length)return alert('Tambah kategori pengeluaran dulu di Akun, tab Kategori.');
+  if(!ks.length)return alert('Tambah kategori pengeluaran dulu di Akun, Pengaturan, Kategori.');
   modal('Anggaran bulanan',`<div class="fr"><span>Kategori</span><select id="ak">${ks.map(c=>`<option value="${c.id}" ${c.id==kid?'selected':''}>${esc(c.nama)}</option>`).join('')}</select></div>
     <div class="fr"><span>Batas per bulan</span><input id="aj" type="number" inputmode="decimal" value="${a?a.jumlah:''}"></div>
     <p class="mt" style="font-size:12px">Warna berubah kuning saat 80% terpakai dan merah saat melebihi batas.</p>
@@ -447,7 +516,7 @@ function utangDetail(id){
 
 /* ---------- transaksi otomatis (gaji dll.) ---------- */
 function rutinForm(id){
-  if(!S.banks.length)return alert('Tambah dompet dulu di Akun, tab Dompet.');
+  if(!S.banks.length)return alert('Tambah dompet dulu di Akun, Pengaturan, Dompet.');
   const r=S.rutin.find(x=>x.id==id);
   R=r?{...r}:{id:'',nama:'',tipe:'masuk',jumlah:'',hari:25,bank:S.banks[0].id,kategori:'',aktif:true};
   rr();
@@ -478,6 +547,10 @@ async function togR(id,on){
   try{await api('toggleRutin',{id,aktif:on});draw()}catch(e){fail(e);if(!e.auth)init()}
 }
 
+let tx=0,ty=0;
+addEventListener('touchstart',e=>{const t=e.touches[0];tx=t.clientX;ty=t.clientY},{passive:true});
+addEventListener('touchend',e=>{const t=e.changedTouches[0];
+  if(tab=='akun'&&sub=='set'&&pg&&!$('#md').classList.contains('o')&&tx<40&&t.clientX-tx>80&&Math.abs(t.clientY-ty)<60)back()},{passive:true});
 const FA={dompet:()=>bankForm(),aset:()=>asetForm(),utang:()=>utangForm(),kat:()=>katForm('','keluar'),rutin:()=>rutinForm()};
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 init();
