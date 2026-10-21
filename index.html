@@ -136,7 +136,7 @@ nav:not([hidden]){animation:navin .45s var(--ease)}
 
 <script>
 // URL Web App Apps Script (berakhiran /exec). Ganti jika Anda deploy ulang dengan URL baru.
-const API='https://script.google.com/macros/s/AKfycbwUATNrOYZTnyv_T4QCwyfuSHFllkEDg-f2W88zOtSheAnC8AllebxStwy3UlZNAtmW/exec';
+const API='https://script.google.com/macros/s/AKfycbwsydprPvuZ8Y0gBVPBUdaFF1nPN45H6HRuAKUhZgGLXlhTwEbLRH8QMDn-sqQwvdTH/exec';
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -160,13 +160,14 @@ const mt=()=>S.trx.filter(t=>String(t.tanggal).startsWith(ym));
 const sum=(l,tp)=>l.filter(t=>t.tipe==tp).reduce((a,t)=>a+Number(t.jumlah),0);
 const bTot=()=>S.banks.reduce((a,b)=>a+Number(b.saldo),0);
 const aTot=()=>S.aset.filter(a=>a.aktif!==false).reduce((a,x)=>a+Number(x.nilai),0);
-const total=()=>bTot()+aTot();   // saldo dompet + aset yang aktif
+const total=()=>bTot();   // total saldo = dompet saja; aset (investasi) hanya masuk nilai bersih
 
 /* ---------- API & kunci PIN ---------- */
 async function api(a,d={}){
   const r=await fetch(API,{method:'POST',body:JSON.stringify({a,pin:PIN,...d})});
   const j=await r.json();
   if(j.err){const e=Error(j.err);e.auth=!!j.auth;throw e}
+  if(!Array.isArray(j.rutin))throw Error('Code.gs di Apps Script masih versi lama. Tempel Code.gs terbaru, lalu Deploy, Manage deployments, Edit, New version');
   S={...EMPTY,...j};return j.r;
 }
 function fail(e){if(e.auth)lock(e.message);else alert(e.message)}
@@ -250,8 +251,7 @@ const V={
     const l=mt(),h=x=>hide?'Rp •••••':rp(x),days=[...new Set(l.map(x=>x.tanggal))].sort().reverse();
     return chips()+`<div class="hero"><small>Total saldo</small>
       <div class="big">${h(total())}<button class="eye" onclick="hide=!hide;draw()" aria-label="Tampilkan atau sembunyikan saldo">${hide?'🙈':'👁'}</button></div>
-      <div class="pp"><div><small>Pemasukan</small><b>${h(sum(l,'masuk'))}</b></div><div><small>Pengeluaran</small><b>${h(sum(l,'keluar'))}</b></div></div>
-      <small style="display:block;margin-top:10px">Dompet ${h(bTot())} + Aset aktif ${h(aTot())}</small></div>`+
+      <div class="pp"><div><small>Pemasukan</small><b>${h(sum(l,'masuk'))}</b></div><div><small>Pengeluaran</small><b>${h(sum(l,'keluar'))}</b></div></div></div>`+
       (days.map(d=>`<div class="day">${new Date(d+'T00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long'})}</div>`+l.filter(x=>x.tanggal==d).map(row).join('')).join('')+
       (l.length?'<p class="mt" style="font-size:12px;margin-top:16px">Ketuk transaksi untuk menghapus.</p>':
       '<div class="card empty"><b>Belum ada transaksi</b><p class="mt">Tambahkan pemasukan atau pengeluaran pertama Anda. Hanya butuh hitungan detik.</p></div>'));
@@ -297,7 +297,7 @@ const V={
   aset(){
     const g={},t=aTot(),n=S.aset.filter(a=>a.aktif!==false).length;
     S.aset.forEach(a=>{const k=a.grup||'Lainnya';(g[k]=g[k]||[]).push(a)});
-    return `<div class="hero"><small>Total nilai aset yang dihitung</small><div class="big">${rp(t)}</div><small>${n} dari ${S.aset.length} aset aktif. Geser tombol untuk menghitung atau tidak ke nilai bersih dan saldo.</small></div>`+
+    return `<div class="hero"><small>Total nilai aset yang dihitung</small><div class="big">${rp(t)}</div><small>${n} dari ${S.aset.length} aset aktif. Geser tombol untuk menghitung atau tidak ke nilai bersih.</small></div>`+
       (Object.entries(g).map(([k,l])=>`<div class="card"><div class="rw"><b>${esc(k)}</b><b>${rp(l.filter(a=>a.aktif!==false).reduce((a,x)=>a+Number(x.nilai),0))}</b></div>
       ${l.map(a=>{const o=a.aktif!==false;return `<div class="it" onclick="asetForm('${a.id}')">${lgo(a)}<div class="g" style="${o?'':'opacity:.5'}"><b>${esc(a.nama)}</b><small class="${o?'in':''}">${o?(t>0?Math.round(a.nilai/t*100)+'% dari aset aktif':'Dihitung'):'Tidak dihitung'}</small></div>
         <b style="${o?'':'opacity:.5'}">${rp(a.nilai)}</b>${sw(o,`togA('${a.id}',this.checked)`)}</div>`}).join('')}</div>`).join('')||
@@ -481,7 +481,7 @@ function asetForm(id){
   modal(id?'Edit aset':'Tambah aset',`<div class="fr"><span>Nama</span><input id="an" placeholder="Emas, Reksa dana" value="${esc(a.nama)}"></div>
     <div class="fr"><span>Nilai</span><input id="av" type="number" inputmode="decimal" value="${a.nilai}"></div>
     <div class="fr"><span>Kelompok</span><input id="ag" placeholder="Investasi" value="${esc(a.grup)}"></div>
-    <div class="fr"><span>Hitung ke nilai bersih dan saldo</span><label class="sw"><input id="aa" type="checkbox" ${a.aktif!==false?'checked':''}><i></i></label></div>
+    <div class="fr"><span>Hitung ke nilai bersih</span><label class="sw"><input id="aa" type="checkbox" ${a.aktif!==false?'checked':''}><i></i></label></div>
     <button class="sv" onclick="saveAset('${id||''}',this)">Simpan</button>${id?del('delAset',id,'Hapus aset ini?'):''}`);
 }
 function saveAset(id,btn){
@@ -491,7 +491,10 @@ function saveAset(id,btn){
 }
 async function togA(id,on){
   const a=S.aset.find(x=>x.id==id);if(a)a.aktif=on;draw();
-  try{await api('toggleAset',{id,aktif:on});draw()}catch(e){fail(e);if(!e.auth)init()}
+  try{await api('toggleAset',{id,aktif:on});
+    const b=S.aset.find(x=>x.id==id);
+    if(b&&b.aktif!==on){alert('Status aset tidak tersimpan di Sheet. Pastikan tab Aset punya kolom aktif dan Code.gs sudah versi terbaru.')}
+    draw()}catch(e){fail(e);if(!e.auth)init()}
 }
 
 /* ---------- utang ---------- */

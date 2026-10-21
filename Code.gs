@@ -126,15 +126,31 @@ function sheet_(name) {
   return s;
 }
 
+/** Tab lama (dari versi sebelumnya) mungkin belum punya semua kolom, mis. "aktif". Tambahkan yang kurang. */
+function ensureCols_(name) {
+  const s = sheet_(name), want = SHEETS[name];
+  const last = Math.max(1, s.getLastColumn());
+  const cur = s.getRange(1, 1, 1, last).getValues()[0].map(String);
+  let n = last;
+  want.forEach(function (c) {
+    if (cur.indexOf(c) < 0) {
+      n++;
+      s.getRange(1, n).setValue(c);
+      if ((TEXT_COLS[name] || []).indexOf(c) >= 0) s.getRange(1, n, s.getMaxRows(), 1).setNumberFormat('@');
+    }
+  });
+}
+
 function ensureInit_() {
   const cache = CacheService.getScriptCache();
-  if (!cache.get('init')) {
+  if (!cache.get('init2')) {
     Object.keys(SHEETS).forEach(sheet_);
+    Object.keys(SHEETS).forEach(ensureCols_);
     const cfg = sheet_('Config');
     if (!read_('Config').some(function (r) { return r.key === 'PIN'; })) {
       cfg.getRange(cfg.getLastRow() + 1, 1, 1, 2).setValues([['PIN', '1234']]);
     }
-    cache.put('init', '1', 21600);
+    cache.put('init2', '1', 21600);
   }
   const P = PropertiesService.getScriptProperties();
   if (!P.getProperty('seeded')) {
@@ -147,9 +163,9 @@ function ensureInit_() {
 
 function read_(name) {
   const v = sheet_(name).getDataRange().getValues();
-  const h = v[0], out = [];
+  const h = v[0], out = [], idc = Math.max(0, h.indexOf('id')); // Config tidak punya kolom id -> pakai kolom pertama
   for (let i = 1; i < v.length; i++) {
-    if (v[i][0] === '') continue;
+    if (v[i][idc] === '') continue;
     const o = {};
     for (let j = 0; j < h.length; j++) {
       let x = v[i][j];
@@ -170,7 +186,7 @@ function find_(name, id) {
 }
 
 function put_(name, o) {
-  const s = sheet_(name), v = s.getDataRange().getValues(), h = v[0];
+  const s = sheet_(name), v = s.getDataRange().getValues(), h = v[0], idc = Math.max(0, h.indexOf('id'));
   const row = h.map(function (k) {
     const x = o[k];
     if (x === undefined || x === null) return '';
@@ -178,7 +194,7 @@ function put_(name, o) {
     return x;
   });
   for (let i = 1; i < v.length; i++) {
-    if (String(v[i][0]) === String(o.id)) { s.getRange(i + 1, 1, 1, h.length).setValues([row]); return; }
+    if (String(v[i][idc]) === String(o.id)) { s.getRange(i + 1, 1, 1, h.length).setValues([row]); return; }
   }
   s.appendRow(row);
 }
