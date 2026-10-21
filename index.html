@@ -272,7 +272,7 @@ function lock(msg=''){
 function lockUI(msg='',bad=true){
   $('#lk').hidden=false;
   const keys=[1,2,3,4,5,6,7,8,9,'<',0,'ok'];
-  $('#lk').innerHTML=`<div class="lkb"><div class="lg">🐷</div><h1>Celengan</h1><p class="mt" style="margin:0">Masukkan PIN</p>
+  $('#lk').innerHTML=`<div class="lkb"><div class="lg">💸💰</div><h1>Celengan</h1><p class="mt" style="margin:0">Masukkan PIN</p>
     <div class="dots ${msg&&bad?'sh':''}">${[...Array(Math.max(4,pb.length))].map((_,i)=>`<i class="${i<pb.length?'f':''} ${i==pb.length-1?'n':''}"></i>`).join('')}</div>
     <p class="${bad?'out':'mt'}" style="min-height:22px;margin:6px 0">${esc(msg)}</p>
     <div class="kp">${keys.map(k=>`<button class="${k=='ok'?'ok':''}" onclick="kp('${k}')" aria-label="${k=='<'?'Hapus':k=='ok'?'Masuk':k}">${k=='<'?'⌫':k=='ok'?'✓':k}</button>`).join('')}</div></div>`;
