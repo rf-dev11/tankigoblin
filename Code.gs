@@ -7,6 +7,7 @@
  * 3. Deploy -> New deployment -> Web app -> Execute as: Me, Who has access: Anyone -> salin URL /exec.
  * 4. Tempel URL itu ke baris "const API" di index.html.
  *
+ * Sudah punya deployment? Tempel file ini, lalu Deploy -> Manage deployments -> Edit -> New version.
  * PIN disimpan di sheet "Config" (baris key = PIN, kolom value). Awalnya 1234, ubah langsung di sheet.
  * PIN harus berupa angka. Dicek di server pada setiap permintaan.
  */
@@ -18,16 +19,16 @@ const SHEETS = {
   Config:    ['key', 'value'],
   Dompet:    ['id', 'nama', 'tipe', 'rek', 'saldo', 'logo'],
   Kategori:  ['id', 'nama', 'tipe', 'ikon'],
-  Transaksi: ['id', 'tanggal', 'tipe', 'bank', 'bank2', 'kategori', 'jumlah', 'catatan'],
+  Transaksi: ['id', 'tanggal', 'tipe', 'bank', 'bank2', 'kategori', 'jumlah', 'catatan', 'jam', 'biaya'],
   Anggaran:  ['id', 'kategori', 'jumlah'],
   Aset:      ['id', 'nama', 'nilai', 'grup', 'aktif'],
   Utang:     ['id', 'tipe', 'nama', 'jumlah', 'sisa', 'catatan'],
   Rutin:     ['id', 'nama', 'tipe', 'jumlah', 'hari', 'bank', 'kategori', 'aktif', 'terakhir']
 };
-// Kolom yang harus tetap teks (supaya tanggal/ID/nomor rekening tidak diubah Sheets)
+// Kolom yang harus tetap teks (supaya tanggal/jam/ID/nomor rekening tidak diubah Sheets)
 const TEXT_COLS = {
   Config: ['value'], Dompet: ['id', 'rek'], Kategori: ['id'],
-  Transaksi: ['id', 'tanggal', 'bank', 'bank2', 'kategori'],
+  Transaksi: ['id', 'tanggal', 'bank', 'bank2', 'kategori', 'jam'],
   Anggaran: ['id', 'kategori'], Aset: ['id'], Utang: ['id'],
   Rutin: ['id', 'bank', 'kategori', 'terakhir']
 };
@@ -126,7 +127,7 @@ function sheet_(name) {
   return s;
 }
 
-/** Tab lama (dari versi sebelumnya) mungkin belum punya semua kolom, mis. "aktif". Tambahkan yang kurang. */
+/** Tab lama (dari versi sebelumnya) mungkin belum punya semua kolom, mis. "jam" dan "biaya". Tambahkan yang kurang. */
 function ensureCols_(name) {
   const s = sheet_(name), want = SHEETS[name];
   const last = Math.max(1, s.getLastColumn());
@@ -143,14 +144,15 @@ function ensureCols_(name) {
 
 function ensureInit_() {
   const cache = CacheService.getScriptCache();
-  if (!cache.get('init2')) {
+  if (!cache.get('init3')) {
     Object.keys(SHEETS).forEach(sheet_);
     Object.keys(SHEETS).forEach(ensureCols_);
     const cfg = sheet_('Config');
     if (!read_('Config').some(function (r) { return r.key === 'PIN'; })) {
       cfg.getRange(cfg.getLastRow() + 1, 1, 1, 2).setValues([['PIN', '1234']]);
+      delete RC.Config;
     }
-    cache.put('init2', '1', 21600);
+    cache.put('init3', '1', 21600);
   }
   const P = PropertiesService.getScriptProperties();
   if (!P.getProperty('seeded')) {
@@ -161,7 +163,11 @@ function ensureInit_() {
   }
 }
 
+// Cache baca per eksekusi (jauh lebih sedikit pembacaan Sheet). Dibuang setiap kali ada penulisan.
+const RC = {};
+
 function read_(name) {
+  if (RC[name]) return RC[name];
   const v = sheet_(name).getDataRange().getValues();
   const h = v[0], out = [], idc = Math.max(0, h.indexOf('id')); // Config tidak punya kolom id -> pakai kolom pertama
   for (let i = 1; i < v.length; i++) {
@@ -169,12 +175,13 @@ function read_(name) {
     const o = {};
     for (let j = 0; j < h.length; j++) {
       let x = v[i][j];
-      if (x instanceof Date) x = Utilities.formatDate(x, TZ, 'yyyy-MM-dd');
+      if (x instanceof Date) x = Utilities.formatDate(x, TZ, h[j] === 'jam' ? 'HH:mm' : 'yyyy-MM-dd');
       if (h[j] === 'aktif') x = !(x === 0 || x === '0' || x === false || String(x).toUpperCase() === 'FALSE');
       o[h[j]] = x;
     }
     out.push(o);
   }
+  RC[name] = out;
   return out;
 }
 
@@ -186,6 +193,7 @@ function find_(name, id) {
 }
 
 function put_(name, o) {
+  delete RC[name];
   const s = sheet_(name), v = s.getDataRange().getValues(), h = v[0], idc = Math.max(0, h.indexOf('id'));
   const row = h.map(function (k) {
     const x = o[k];
@@ -200,6 +208,7 @@ function put_(name, o) {
 }
 
 function delWhere_(name, pred) {
+  delete RC[name];
   const s = sheet_(name), v = s.getDataRange().getValues(), h = v[0];
   for (let i = v.length - 1; i >= 1; i--) {
     const o = {};
@@ -220,6 +229,7 @@ function num_(x) {
 
 function pad_(n) { return (n < 10 ? '0' : '') + n; }
 function today_() { return Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd'); }
+function nowT_() { return Utilities.formatDate(new Date(), TZ, 'HH:mm'); }
 
 function state_() {
   const cut = Utilities.formatDate(new Date(Date.now() - KEEP_MONTHS * 30 * 864e5), TZ, 'yyyy-MM-dd');
@@ -299,11 +309,25 @@ function adj_(id, delta) {
   put_('Dompet', b);
 }
 
+/** Tujuan transfer berupa aset ditulis "a:<id aset>". */
+function isA_(id) { return String(id).indexOf('a:') === 0; }
+
+function adjA_(id, delta) {
+  const a = find_('Aset', String(id).slice(2));
+  if (!a) return;
+  a.nilai = Number(a.nilai) + delta;
+  put_('Aset', a);
+}
+
 function applyTrx_(t, sign) {
   const j = Number(t.jumlah) * sign;
   if (t.tipe === 'masuk') adj_(t.bank, j);
   else if (t.tipe === 'keluar') adj_(t.bank, -j);
-  else if (t.tipe === 'transfer') { adj_(t.bank, -j); adj_(t.bank2, j); }
+  else if (t.tipe === 'transfer') {
+    const f = Number(t.biaya || 0) * sign; // biaya admin dipotong dari dompet asal
+    adj_(t.bank, -j - f);
+    if (isA_(t.bank2)) adjA_(t.bank2, j); else adj_(t.bank2, j);
+  }
 }
 
 function addTrx_(d) {
@@ -313,16 +337,24 @@ function addTrx_(d) {
   if (!(j > 0)) throw new Error('Jumlah harus lebih dari 0');
   if (!find_('Dompet', d.bank)) throw new Error('Dompet tidak ditemukan');
   if (tipe === 'transfer') {
-    if (!find_('Dompet', d.bank2)) throw new Error('Dompet tujuan tidak ditemukan');
-    if (String(d.bank) === String(d.bank2)) throw new Error('Dompet asal dan tujuan tidak boleh sama');
+    if (isA_(d.bank2)) {
+      if (!find_('Aset', String(d.bank2).slice(2))) throw new Error('Aset tujuan tidak ditemukan');
+    } else {
+      if (!find_('Dompet', d.bank2)) throw new Error('Dompet tujuan tidak ditemukan');
+      if (String(d.bank) === String(d.bank2)) throw new Error('Dompet asal dan tujuan tidak boleh sama');
+    }
   }
   const tgl = String(d.tanggal || today_());
   if (!/^\d{4}-\d{2}-\d{2}$/.test(tgl)) throw new Error('Format tanggal tidak valid');
+  const jam = /^([01]\d|2[0-3]):[0-5]\d$/.test(String(d.jam || '')) ? String(d.jam) : nowT_();
+  const biaya = tipe === 'transfer' ? Math.max(0, num_(d.biaya || 0)) : 0;
+  // aplikasi boleh mengirim id sendiri (agar bisa langsung dihapus sebelum sinkron selesai)
+  const id = (/^i[0-9a-f]{9}$/.test(String(d.id || '')) && !find_('Transaksi', d.id)) ? d.id : newId_();
   const t = {
-    id: newId_(), tanggal: tgl, tipe: tipe, bank: d.bank,
+    id: id, tanggal: tgl, tipe: tipe, bank: d.bank,
     bank2: tipe === 'transfer' ? d.bank2 : '',
     kategori: tipe === 'transfer' ? '' : (d.kategori || ''),
-    jumlah: j, catatan: String(d.catatan || '')
+    jumlah: j, catatan: String(d.catatan || ''), jam: jam, biaya: biaya
   };
   put_('Transaksi', t);
   applyTrx_(t, 1);
@@ -444,7 +476,7 @@ function runRutin_() {
       try {
         addTrx_({
           tipe: r.tipe, bank: r.bank, kategori: r.kategori, jumlah: r.jumlah,
-          tanggal: cy + '-' + pad_(cm + 1) + '-' + pad_(day), catatan: 'Otomatis: ' + r.nama
+          tanggal: cy + '-' + pad_(cm + 1) + '-' + pad_(day), catatan: 'Otomatis: ' + r.nama, jam: '00:00'
         });
       } catch (e) { break; }
       last = cy + '-' + pad_(cm + 1);
