@@ -1,0 +1,81 @@
+/* Celengan: gaya kotak. Warna tema diatur lewat atribut data-tema di <html>. Dimuat SETELAH <style> di index.html. */
+:root{--bg:#9dc03f;--g:var(--bg);--ink:#14141a;--paper:#f3f1ea;--pos:#5be08a;--r:#ff6a58;--c:#14141a;--c2:#2a2a33;--m:#a3a3ad;--t:#f3f1ea;color-scheme:light;
+  --sans:"Space Grotesk",-apple-system,"Helvetica Neue",Arial,sans-serif;--mono:"Space Mono",ui-monospace,Menlo,Consolas,monospace}
+:root[data-tema=biru]{--bg:#5b96ea}
+:root[data-tema=oranye]{--bg:#f4694b}
+:root[data-tema=kuning]{--bg:#f2b233}
+
+*{border-radius:0!important}
+.pie,.pie:after,.sp{border-radius:50%!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans)}
+#ap{color:var(--ink)}
+h1{font-size:44px;line-height:1;letter-spacing:-.04em;font-weight:700}
+small,.chip,.day,.gl,.lb,.bk,.seg button,.tt,.ts,nav button,.fr>span,.sv{font-family:var(--mono)}
+small{font-size:11.5px;letter-spacing:-.02em}
+.w>.mt,.lb,.gl,.bk,.lk .mt,#mb .mt{color:#14141abf}
+.gl{text-transform:none;font-size:12px;letter-spacing:0}
+.bk{font-size:14px}
+.in,.it small.in{color:var(--pos)}.out,.it small.out{color:var(--r)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--ink)}
+
+/* blok hitam: kartu, daftar, label */
+.card,.grp{background:var(--c);color:var(--paper);box-shadow:none}
+.chip{background:none;color:var(--ink);border:2px solid var(--ink);font-size:12px}
+.chip.on{background:var(--ink);color:var(--paper);font-weight:700}
+.day{display:inline-block;background:var(--ink);color:var(--paper);padding:4px 10px;margin:22px 0 8px;font-size:11px;text-transform:none;letter-spacing:0}
+
+/* kartu utama: bingkai tebal + kotak-kotak piksel di pojok */
+.hero{background:none;color:var(--ink);border:3px solid var(--ink);box-shadow:none}
+.hero:before{width:112px;height:112px;right:0;top:0;background:var(--ink);opacity:.2;
+  -webkit-mask:repeating-linear-gradient(90deg,#000 0 7px,#0000 7px 14px),repeating-linear-gradient(0deg,#000 0 7px,#0000 7px 14px);-webkit-mask-composite:source-in;
+  mask:repeating-linear-gradient(90deg,#000 0 7px,#0000 7px 14px),repeating-linear-gradient(0deg,#000 0 7px,#0000 7px 14px);mask-composite:intersect}
+.big{font-size:clamp(30px,9vw,44px);letter-spacing:-.04em;font-weight:700}
+.eye{background:var(--ink);color:var(--paper)}
+.pp div{background:var(--ink);color:var(--paper);-webkit-backdrop-filter:none;backdrop-filter:none}
+.pp small{color:var(--m)}
+
+/* navigasi & tombol + */
+nav{background:var(--ink);-webkit-backdrop-filter:none;backdrop-filter:none}
+nav button{color:#ffffff99;font-size:10px}
+nav .on{background:var(--bg);color:var(--ink)}nav .on span{transform:none}
+.fab{background:var(--ink);color:var(--bg);box-shadow:4px 4px 0 #0004;font-weight:400}
+
+/* form & modal */
+.md,#mb{background:var(--bg)}
+.mh{background:var(--ink);color:var(--paper)}.mh .x{color:var(--paper)}
+.seg{background:#ffffff1f}.seg button{color:var(--paper);font-size:12px}.seg .on{background:var(--bg);color:var(--ink);box-shadow:none}
+.amt{color:var(--bg);font-family:var(--sans);letter-spacing:-.03em}.amt::placeholder{color:#ffffff55}
+.fr{border-bottom:2px solid var(--ink);color:var(--ink)}
+.fr>span{color:var(--ink);font-size:13px}
+.fr select,.fr input{color:var(--ink);font-weight:700}
+.fr input::placeholder{color:#14141a80}
+.fr select option,.fr select optgroup{background:var(--paper);color:var(--ink)}
+.ch{background:none;color:var(--ink);border:2px solid var(--ink)}.ch.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.sv{background:var(--ink);color:var(--paper);box-shadow:5px 5px 0 #0003;letter-spacing:.02em}
+#mb .x{color:var(--ink);text-decoration:underline;font-weight:700}#mb .mh .x{text-decoration:none}
+.sw input:checked+i{background:var(--g)}.fr .sw input:checked+i{background:var(--ink)}
+
+/* kunci PIN */
+.lk{color:var(--ink)}.lk .out{color:#6b0d02;font-weight:700}
+.dots i{border-color:var(--ink)}.dots i.f{background:var(--ink);border-color:var(--ink)}
+.kp button{background:var(--ink);color:var(--paper);font-family:var(--mono)}.kp button:active{background:#000}.kp .ok{background:var(--paper);color:var(--ink)}
+
+/* popup */
+.ts{background:var(--ink);color:var(--paper);border:2px solid var(--paper);-webkit-backdrop-filter:none;backdrop-filter:none}.ts.ok{color:var(--pos)}.ts.bad{color:var(--r)}
+
+/* pilihan tema */
+.tg{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tc{display:flex;justify-content:space-between;align-items:flex-end;height:96px;padding:10px;border:3px solid var(--ink);color:var(--ink);font:700 14px var(--mono);text-align:left}
+.tc.on{outline:3px solid var(--ink);outline-offset:3px}.tc b{font-size:24px}
+
+/* ikon mini bank + pemilih dompet */
+.bm{display:inline-flex;align-items:center;gap:6px;vertical-align:middle;min-width:0}
+.mi{width:18px;height:18px;flex:none;object-fit:cover;display:inline-grid;place-items:center;font:700 11px/1 var(--mono);font-style:normal;color:var(--ink)}
+.pk{background:none;border:0;color:var(--ink);font:inherit;font-weight:700;font-size:16px;display:inline-flex;align-items:center;gap:6px;max-width:68%;min-width:0;padding:0;min-height:36px;text-align:right}
+.pk:after{content:"▾";flex:none}
+.pl{position:fixed;inset:0;background:#000a;z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.plb{background:var(--bg);width:100%;max-width:520px;max-height:70vh;overflow:auto;border-top:3px solid var(--ink);padding:4px 16px calc(16px + env(safe-area-inset-bottom))}
+.po{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;border-bottom:2px solid var(--ink);color:var(--ink);font:inherit;font-weight:700;padding:12px 0;text-align:left;min-height:52px}
+.po.on{background:var(--ink);color:var(--paper);padding-left:10px;padding-right:10px}
+.po .g{flex:1;min-width:0}.po small{color:inherit;opacity:.75;font-weight:400}
+.po .mi{width:28px;height:28px;font-size:14px}
