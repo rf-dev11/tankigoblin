@@ -367,7 +367,7 @@ const V={
       const d=new Date(+ym.slice(0,4),+ym.slice(5)-1-(5-i),1),k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
       return [BL[d.getMonth()],sum(S.trx.filter(t=>String(t.tanggal).startsWith(k)),'keluar')];
     }),mx=Math.max(...tr.map(x=>x[1]),1);
-    return `<h1>Anggaran</h1>`+chips()+
+    return `<h1>Ringkasan</h1>`+chips()+
       `<div class="card"><div class="rw"><b>Tren pengeluaran</b><small class="mt">6 bulan terakhir</small></div>
       <div class="bars">${tr.map(([m,v])=>`<div><i style="height:${v/mx*100}%"></i><small>${m}</small></div>`).join('')}</div></div>`+
       donut(l,'keluar','Pengeluaran')+donut(l,'masuk','Pemasukan');
@@ -380,7 +380,7 @@ const V={
       CL={over:'var(--r)',warn:'var(--y)',ok:'var(--g)'},
       bar=(p,s)=>`<div class="stk"><i style="width:${Math.min(p,100)}%;background:${CL[s]}"></i></div>`,
       ts_=st(ts,tb),tp=Math.round(ts/(tb||1)*100);
-    return '<h1>Dasbor</h1>'+chips()+`<div class="card"><div class="rw"><b>Anggaran</b><button class="x" style="color:var(--g)" onclick="angForm()">Atur</button></div>`+
+    return '<h1>Anggaran</h1>'+chips()+`<div class="card"><div class="rw"><b>Ringkasan</b><button class="x" style="color:var(--g)" onclick="angForm()">Atur</button></div>`+
       (A.length?`${cur?`<small class="mt">${hl} hari tersisa</small>`:''}
       <div class="rw" style="margin-top:10px"><div><small class="mt">Terpakai sejauh ini</small><b style="display:block;font-size:20px">${rp(ts)}</b></div><div style="text-align:right"><small class="mt">Total anggaran</small><b style="display:block;font-size:20px">${rp(tb)}</b></div></div>
       ${bar(ts/tb*100,ts_)}<p class="${ts_=='over'?'out':ts_=='warn'?'warn':''}">${ts_=='over'?`Melebihi anggaran ${rp(ts-tb)}.`:ts_=='warn'?`Hati-hati, ${tp}% sudah terpakai. Sisa <b>${rp(tb-ts)}</b>.`:`Bagus! Anda memiliki <b class="in">${rp(tb-ts)}</b> tersisa.`}</p>
@@ -454,7 +454,7 @@ const V={
     return (sb?'':`<h1>Akun</h1><div class="chips">${[['bersih','Nilai bersih'],['aset','Aset'],['utang','Utang'],['set','Pengaturan']].map(([k,l])=>`<button class="chip ${sub==k?'on':''}" onclick="goSub('${k}')">${l}</button>`).join('')}</div>`)+V[sub]();
   }
 };
-const NAV=[['trx','🧾','Transaksi'],['dash','📊','Dasbor'],['ring','📈','Anggaran'],['akun','👛','Akun']];
+const NAV=[['trx','🧾','Transaksi'],['dash','📊','Anggaran'],['ring','📈','Ringkasan'],['akun','👛','Akun']];
   V.tema=()=>`<div class="tg">${Object.entries(TEMA).map(([k,[n,c]])=>`<button class="tc ${k==tema?'on':''}" style="background:${c}" onclick="setTema('${k}')"><span>${n}</span><b>${k==tema?'✓':''}</b></button>`).join('')}</div><p class="mt" style="font-size:12px;margin:10px 0 0">Warna disimpan di perangkat ini.</p>`;
 $('#nv').innerHTML=NAV.map(([k,i,l])=>`<button data-k="${k}" onclick="go('${k}')"><span>${i}</span>${l}</button>`).join('');
 const fkey=()=>sub=='set'?pg:sub;
