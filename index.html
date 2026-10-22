@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#9dc03f">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -167,6 +167,10 @@ nav:not([hidden]){animation:navin .45s var(--ease)}
 }
 @media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
 </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tema.css">
+<script>try{document.documentElement.dataset.tema=localStorage.getItem('tema')||'hijau'}catch(e){}</script>
 </head>
 <body>
 <div id="ap" class="w"></div>
@@ -195,6 +199,29 @@ const today=()=>new Date().toLocaleDateString('sv');
 const nowT=()=>new Date().toTimeString().slice(0,5);
 const sw=(on,h)=>`<label class="sw" onclick="event.stopPropagation()"><input type="checkbox" ${on?'checked':''} onchange="${h}"><i></i></label>`;
 const EMPTY={banks:[],cats:[],trx:[],ang:[],aset:[],utang:[],rutin:[]};
+
+  const TEMA={hijau:['Hijau','#9dc03f'],biru:['Biru','#5b96ea'],oranye:['Oranye','#f4694b'],kuning:['Kuning','#f2b233']};
+let tema='hijau';try{tema=localStorage.getItem('tema')||'hijau'}catch(e){}
+function setTema(k,x){
+  if(!TEMA[k])k='hijau';tema=k;document.documentElement.dataset.tema=k;
+  const m=document.querySelector('meta[name=theme-color]');if(m)m.content=TEMA[k][1];
+  try{localStorage.setItem('tema',k)}catch(e){}
+  if(!x)draw();
+}
+setTema(tema,1);
+const mi=b=>b.logo?`<img class="mi" src="${esc(b.logo)}" alt="">`:`<i class="mi" style="background:${kcol(b.id||b.nama)}">${esc(String(b.nama||'?')[0])}</i>`;
+const bm=i=>{const a=isA(i),o=a?S.aset.find(x=>x.id==String(i).slice(2)):S.banks.find(x=>x.id==i);
+  return `<span class="bm">${o?mi(o):''}${esc(o?o.nama:a?'(aset dihapus)':'(dompet dihapus)')}</span>`};
+function pick(w,k,as){
+  const O=w=='F'?F:R,
+    li=(v,o)=>`<button class="po ${O[k]==v?'on':''}" onclick="pset('${w}','${k}','${v}')">${mi(o)}<span class="g">${esc(o.nama)}</span><small>${rp(o.saldo??o.nilai)}</small></button>`;
+  const d=document.createElement('div');d.className='pl';d.id='pl';
+  d.onclick=e=>{if(e.target==d)d.remove()};
+  d.innerHTML=`<div class="plb"><p class="gl">Dompet</p>${S.banks.map(b=>li(b.id,b)).join('')}`+
+    (as&&S.aset.length?`<p class="gl">Aset / investasi</p>${S.aset.map(a=>li('a:'+a.id,a)).join('')}`:'')+`</div>`;
+  document.body.appendChild(d);
+}
+function pset(w,k,v){(w=='F'?F:R)[k]=v;$('#pl').remove();w=='F'?fr():rr()}
 
 let S={...EMPTY},tab='trx',sub='bersih',pg='',ym=today().slice(0,7),hide=false,F={},R={},LG,LGP,PIN='',pb='',busy=false,hid=0;
 try{PIN=sessionStorage.getItem('pin')||''}catch(e){}
@@ -309,8 +336,8 @@ const row=t=>{
   const k=S.cats.find(c=>c.id==t.kategori),tr=t.tipe=='transfer',m=t.tipe=='masuk';
   return `<div class="it" onclick="delTrx('${t.id}')">
     ${tr?'<div class="ic" style="background:#ffffff1f">🔁</div>':ic(k||{nama:'?'})}
-    <div class="g"><b>${tr?esc(bn(t.bank))+' ke '+esc(bn2(t.bank2)):esc(k?k.nama:'Tanpa kategori')}</b>
-    <small>${t.jam?esc(t.jam)+' · ':''}${tr?'Transfer'+(t.biaya>0?' · admin '+rp(t.biaya):''):esc(bn(t.bank))}${t.catatan?' · '+esc(t.catatan):''}</small></div>
+    <div class="g"><b>${tr?bm(t.bank)+' → '+bm(t.bank2):esc(k?k.nama:'Tanpa kategori')}</b>
+    <small>${t.jam?esc(t.jam)+' · ':''}${tr?'Transfer'+(t.biaya>0?' · admin '+rp(t.biaya):''):bm(t.bank)}${t.catatan?' · '+esc(t.catatan):''}</small></div>
     <b class="${m?'in':tr?'':'out'}">${m?'+':tr?'':'-'}${rp(t.jumlah)}</b></div>`;
 };
 const donut=(l,tipe,judul)=>{
@@ -340,7 +367,7 @@ const V={
       const d=new Date(+ym.slice(0,4),+ym.slice(5)-1-(5-i),1),k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
       return [BL[d.getMonth()],sum(S.trx.filter(t=>String(t.tanggal).startsWith(k)),'keluar')];
     }),mx=Math.max(...tr.map(x=>x[1]),1);
-    return `<h1>Ringkasan</h1>`+chips()+
+    return `<h1>Anggaran</h1>`+chips()+
       `<div class="card"><div class="rw"><b>Tren pengeluaran</b><small class="mt">6 bulan terakhir</small></div>
       <div class="bars">${tr.map(([m,v])=>`<div><i style="height:${v/mx*100}%"></i><small>${m}</small></div>`).join('')}</div></div>`+
       donut(l,'keluar','Pengeluaran')+donut(l,'masuk','Pemasukan');
@@ -406,28 +433,29 @@ const V={
       (S.rutin.map(r=>{
         const k=S.cats.find(c=>c.id==r.kategori),m=r.tipe=='masuk',tk=String(r.terakhir||'');
         return `<div class="card" onclick="rutinForm('${r.id}')" style="${r.aktif?'':'opacity:.6'}"><div class="rw"><div class="it" style="padding:0;flex:1">${ic(k||{nama:'?'})}
-          <div class="g"><b>${esc(r.nama)}</b><small>Tiap tanggal ${esc(r.hari)} - ${esc(bn(r.bank))}</small></div></div>
+          <div class="g"><b>${esc(r.nama)}</b><small>Tiap tanggal ${esc(r.hari)} · ${bm(r.bank)}</small></div></div>
           <b class="${m?'in':'out'}">${m?'+':'-'}${rp(r.jumlah)}</b></div>
           <div class="rw" style="margin-top:8px"><small class="mt">${tk?'Terakhir: '+BL[+tk.slice(5,7)-1]+' '+tk.slice(0,4):'Belum pernah berjalan'}</small>${sw(r.aktif,`togR('${r.id}',this.checked)`)}</div></div>`}).join('')||
       '<div class="card empty"><b>Belum ada transaksi otomatis</b><p class="mt">Tekan + untuk menambah, misalnya gaji tiap tanggal 25.</p></div>');
   },
   set(){
-    const T={dompet:'Dompet',kat:'Kategori',rutin:'Transaksi otomatis'};
+    const T={dompet:'Dompet',kat:'Kategori',rutin:'Transaksi otomatis',tema:'Tema warna'};
     if(pg)return `<div class="nb"><button class="bk" onclick="back()">‹ Pengaturan</button></div><h1>${T[pg]}</h1>`+V[pg]();
     const rw=([k,i,c,l,d])=>`<div class="row2" onclick="push('${k}')"><div class="ic" style="background:${c}33">${i}</div><span class="g">${l}</span><span class="mt">${d}</span><span class="chev">›</span></div>`;
     return `<p class="gl" style="margin-top:4px">Data</p><div class="grp">${[
       ['dompet','👛','#3b82f6','Dompet',S.banks.length+' dompet'],
       ['kat','🏷️','#a855f7','Kategori',S.cats.length+' kategori'],
       ['rutin','🔁','#0bc78d','Transaksi otomatis',S.rutin.filter(r=>r.aktif).length+' aktif']].map(rw).join('')}</div>
-      <p class="gl">Keamanan</p><div class="grp"><div class="row2" onclick="lock()"><div class="ic" style="background:#ef5b5b33">🔒</div><span class="g">Kunci aplikasi sekarang</span><span class="chev">›</span></div></div>
-      <p class="mt" style="font-size:12px;margin:10px 4px">PIN diubah langsung di tab Config pada Google Sheet.</p>`;
+      <p class="gl">Tampilan</p><div class="grp">${rw(['tema','🎨','#ffd60a','Tema warna',TEMA[tema][0]])}</div><p class="gl">Keamanan</p><div class="grp"><div class="row2" onclick="lock()"><div class="ic" style="background:#ef5b5b33">🔒</div><span class="g">Kunci aplikasi sekarang</span><span class="chev">›</span></div></div>
+      <p class="mt" style="font-size:12px;margin:10px 4px"></p>`;
   },
   akun(){
     const sb=sub=='set'&&pg;
     return (sb?'':`<h1>Akun</h1><div class="chips">${[['bersih','Nilai bersih'],['aset','Aset'],['utang','Utang'],['set','Pengaturan']].map(([k,l])=>`<button class="chip ${sub==k?'on':''}" onclick="goSub('${k}')">${l}</button>`).join('')}</div>`)+V[sub]();
   }
 };
-const NAV=[['trx','🧾','Transaksi'],['dash','📊','Dasbor'],['ring','📈','Ringkasan'],['akun','👛','Akun']];
+const NAV=[['trx','🧾','Transaksi'],['dash','📊','Dasbor'],['ring','📈','Anggaran'],['akun','👛','Akun']];
+  V.tema=()=>`<div class="tg">${Object.entries(TEMA).map(([k,[n,c]])=>`<button class="tc ${k==tema?'on':''}" style="background:${c}" onclick="setTema('${k}')"><span>${n}</span><b>${k==tema?'✓':''}</b></button>`).join('')}</div><p class="mt" style="font-size:12px;margin:10px 0 0">Warna disimpan di perangkat ini.</p>`;
 $('#nv').innerHTML=NAV.map(([k,i,l])=>`<button data-k="${k}" onclick="go('${k}')"><span>${i}</span>${l}</button>`).join('');
 const fkey=()=>sub=='set'?pg:sub;
 function draw(dir){   // dir: 'x' = muncul bertahap, 'f' = masuk dari kanan, 'b' = kembali dari kiri
@@ -468,8 +496,8 @@ function fr(){
   const bo2=v=>`<optgroup label="Dompet">${bo(v)}</optgroup>`+(S.aset.length?`<optgroup label="Aset / investasi">${S.aset.map(a=>`<option value="a:${a.id}" ${('a:'+a.id)==v?'selected':''}>${esc(a.nama)} (${rp(a.nilai)})</option>`).join('')}</optgroup>`:'');
   modal('Tambah transaksi',
     (tr?'':`<p class="lb">Kategori</p><div class="cg">${ks.map(c=>`<button class="ch ${c.id==F.kat?'on':''}" onclick="F.kat='${c.id}';fr()">${esc(c.ikon||emj(c.nama))} ${esc(c.nama)}</button>`).join('')}<button class="ch" onclick="newKat()">+ Baru</button></div>`)+
-    `<div class="fr" style="margin-top:12px"><span>${tr?'Dari':'Akun'}</span><select onchange="F.bank=this.value">${bo(F.bank)}</select></div>`+
-    (tr?`<div class="fr"><span>Ke</span><select onchange="F.bank2=this.value">${bo2(F.bank2)}</select></div>`:'')+
+    `<div class="fr" style="margin-top:12px"><span>${tr?'Dari':'Akun'}</span><button class="pk" onclick="pick('F','bank')">${bm(F.bank)}</button></div>`+
+    (tr?`<div class="fr"><span>Ke</span><button class="pk" onclick="pick('F','bank2',1)">${bm(F.bank2)}</button></div>`:'')+
     `<div class="fr"><span>Tanggal</span><input type="date" value="${F.tanggal}" onchange="F.tanggal=this.value"></div>
     <div class="fr"><span>Jam</span><input type="time" value="${F.jam}" onchange="F.jam=this.value"></div>
     ${tr?`<div class="fr"><span>Biaya admin</span><input type="number" inputmode="decimal" placeholder="Opsional" value="${esc(F.biaya)}" oninput="F.biaya=this.value"></div><p class="mt" style="font-size:12px;margin:8px 0 0">Biaya admin ikut dipotong dari dompet asal. Jika tujuannya aset, nilai aset bertambah sebesar jumlah transfer.</p>`:''}
@@ -607,7 +635,7 @@ function rr(){
   modal(R.id?'Edit otomatis':'Tambah otomatis',
     `<div class="fr"><span>Nama</span><input placeholder="Gaji bulanan" value="${esc(R.nama)}" oninput="R.nama=this.value"></div>
     <div class="fr"><span>Tiap tanggal</span><input type="number" inputmode="numeric" min="1" max="31" value="${esc(R.hari)}" oninput="R.hari=this.value" style="width:90px"></div>
-    <div class="fr"><span>Masuk ke dompet</span><select onchange="R.bank=this.value">${S.banks.map(b=>`<option value="${b.id}" ${b.id==R.bank?'selected':''}>${esc(b.nama)}</option>`).join('')}</select></div>
+    <div class="fr"><span>Masuk ke dompet</span><select onchange="R.bank=this.value"><button class="pk" onclick="pick('R','bank')">${bm(R.bank)}</button></select></div>
     <div class="fr"><span>Kategori</span><select onchange="R.kategori=this.value">${ks.map(c=>`<option value="${c.id}" ${c.id==R.kategori?'selected':''}>${esc(c.nama)}</option>`).join('')||'<option value="">(belum ada)</option>'}</select></div>
     <div class="fr"><span>Aktif</span><label class="sw"><input type="checkbox" ${R.aktif?'checked':''} onchange="R.aktif=this.checked"><i></i></label></div>
     <p class="mt" style="font-size:12px">Tanggal 29 sampai 31 otomatis menyesuaikan akhir bulan yang lebih pendek. Jika tanggal bulan ini sudah lewat, mulai berjalan bulan depan.</p>
