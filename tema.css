@@ -79,3 +79,11 @@ nav .on{background:var(--bg);color:var(--ink)}nav .on span{transform:none}
 .po.on{background:var(--ink);color:var(--paper);padding-left:10px;padding-right:10px}
 .po .g{flex:1;min-width:0}.po small{color:inherit;opacity:.75;font-weight:400}
 .po .mi{width:28px;height:28px;font-size:14px}
+
+/* layar "Memuat data": teks di tengah, GIF di bawahnya */
+.ld{min-height:70vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:16px}
+.ld b{font:700 18px var(--mono)}
+.ld b:after{content:"▮";margin-left:4px;animation:blink 1s steps(1) infinite}
+.ld iframe{width:min(260px,70vw);height:min(260px,70vw);border:3px solid var(--ink);pointer-events:none}
+.ld a{color:var(--ink);font:11px var(--mono);opacity:.7}
+@keyframes blink{50%{opacity:0}}
