@@ -284,7 +284,7 @@ function delTrx(id){
 
 async function init(){
   if(!PIN)return lockUI();
-  $('#ap').innerHTML='<p class="mt">Memuat data…</p>';
+ $('#ap').innerHTML='<div class="ld"><b>Memuat data…</b><iframe src="https://giphy.com/embed/4E4KqxulO9JtRF8s6T" frameborder="0" allowfullscreen></iframe><a href="https://giphy.com/gifs/cat-loading-mimibarbar-4E4KqxulO9JtRF8s6T" target="_blank" rel="noopener">via GIPHY</a></div>';
   try{await api('getAll');draw('x')}
   catch(e){
     if(e.auth)return lock(e.message);
