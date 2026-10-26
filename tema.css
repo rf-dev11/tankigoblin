@@ -4,6 +4,11 @@
 :root[data-tema=biru]{--bg:#5b96ea}
 :root[data-tema=oranye]{--bg:#f4694b}
 :root[data-tema=kuning]{--bg:#f2b233}
+:root[data-tema=pink]{--bg:#f58ac0}
+:root[data-tema=ungu]{--bg:#a58bf0}
+:root[data-tema=tosca]{--bg:#3fd0c0}
+:root[data-tema=merah]{--bg:#e8453c}
+:root[data-tema=krem]{--bg:#e6dfc8}
 
 *{border-radius:0!important}
 .pie,.pie:after,.sp{border-radius:50%!important}
@@ -90,3 +95,8 @@ nav .on{background:var(--bg);color:var(--ink)}nav .on span{transform:none}
 .ld iframe{width:min(260px,70vw);height:min(260px,70vw);border:3px solid var(--ink);pointer-events:none}
 .ld a{color:var(--ink);font:11px var(--mono);opacity:.7}
 @keyframes blink{50%{opacity:0}}
+
+/* cari & filter */
+.srch{width:100%;min-width:0;background:var(--c2);color:var(--paper);border:2px solid var(--paper);padding:10px;font:inherit;font-size:14px;min-height:44px}
+.srch option{background:var(--c);color:var(--paper)}
+.rw>.srch{flex:1}
