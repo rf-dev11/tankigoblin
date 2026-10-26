@@ -100,3 +100,6 @@ nav .on{background:var(--bg);color:var(--ink)}nav .on span{transform:none}
 .srch{width:100%;min-width:0;background:var(--c2);color:var(--paper);border:2px solid var(--paper);padding:10px;font:inherit;font-size:14px;min-height:44px}
 .srch option{background:var(--c);color:var(--paper)}
 .rw>.srch{flex:1}
+
+/* total pengeluaran per hari */
+.day.tot{color:var(--r);margin-left:6px}
