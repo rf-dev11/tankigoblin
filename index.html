@@ -198,9 +198,9 @@ const lgo=b=>b.logo?`<img class="ic" src="${esc(b.logo)}" alt="">`:`<div class="
 const today=()=>new Date().toLocaleDateString('sv');
 const nowT=()=>new Date().toTimeString().slice(0,5);
 const sw=(on,h)=>`<label class="sw" onclick="event.stopPropagation()"><input type="checkbox" ${on?'checked':''} onchange="${h}"><i></i></label>`;
-const EMPTY={banks:[],cats:[],trx:[],ang:[],aset:[],utang:[],rutin:[]};
+const EMPTY={banks:[],cats:[],trx:[],ang:[],aset:[],utang:[],rutin:[],target:[],riw:[]};
 
-  const TEMA={hijau:['Hijau','#9dc03f'],biru:['Biru','#5b96ea'],oranye:['Oranye','#f4694b'],kuning:['Kuning','#f2b233']};
+  const TEMA={hijau:['Hijau','#9dc03f'],biru:['Biru','#5b96ea'],oranye:['Oranye','#f4694b'],kuning:['Kuning','#f2b233'],pink:['Pink','#f58ac0'],ungu:['Ungu','#a58bf0'],tosca:['Tosca','#3fd0c0'],merah:['Merah','#e8453c'],krem:['Krem','#e6dfc8']};
 let tema='hijau';try{tema=localStorage.getItem('tema')||'hijau'}catch(e){}
 function setTema(k,x){
   if(!TEMA[k])k='hijau';tema=k;document.documentElement.dataset.tema=k;
@@ -229,7 +229,7 @@ const bn=i=>(S.banks.find(b=>b.id==i)||{nama:'(dompet dihapus)'}).nama;
 const isA=i=>String(i).startsWith('a:');   // tujuan transfer berupa aset: "a:<id aset>"
 const bn2=i=>isA(i)?(S.aset.find(a=>a.id==String(i).slice(2))||{nama:'(aset dihapus)'}).nama:bn(i);
 const mt=()=>S.trx.filter(t=>String(t.tanggal).startsWith(ym));
-const sum=(l,tp)=>l.filter(t=>t.tipe==tp).reduce((a,t)=>a+Number(t.jumlah),0)+(tp=='keluar'?l.filter(t=>t.tipe=='transfer').reduce((a,t)=>a+Number(t.biaya||0),0):0);
+const sum=(l,tp)=>l.filter(t=>t.tipe==tp&&t.kategori!='adj').reduce((a,t)=>a+Number(t.jumlah),0)+(tp=='keluar'?l.filter(t=>t.tipe=='transfer').reduce((a,t)=>a+Number(t.biaya||0),0):0);
 const bTot=()=>S.banks.reduce((a,b)=>a+Number(b.saldo),0);
 const aTot=()=>S.aset.filter(a=>a.aktif!==false).reduce((a,x)=>a+Number(x.nilai),0);
 const adj=(id,v)=>{const b=S.banks.find(x=>x.id==id);if(b)b.saldo=Number(b.saldo)+v};
@@ -334,15 +334,15 @@ function chips(){
 }
 const row=t=>{
   const k=S.cats.find(c=>c.id==t.kategori),tr=t.tipe=='transfer',m=t.tipe=='masuk';
-  return `<div class="it" onclick="delTrx('${t.id}')">
-    ${tr?'<div class="ic" style="background:#ffffff1f">🔁</div>':ic(k||{nama:'?'})}
-    <div class="g"><b>${tr?bm(t.bank)+' → '+bm(t.bank2):esc(k?k.nama:'Tanpa kategori')}</b>
+  return `<div class="it" onclick="trxForm('${t.id}')">
+    ${tr?'<div class="ic" style="background:#ffffff1f">🔁</div>':t.kategori=='adj'?'<div class="ic" style="background:#ffffff1f">⚖️</div>':ic(k||{nama:'?'})}
+    <div class="g"><b>${tr?bm(t.bank)+' → '+bm(t.bank2):esc(k?k.nama:t.kategori=='adj'?'Penyesuaian saldo':'Tanpa kategori')}</b>
     <small>${t.jam?esc(t.jam)+' · ':''}${tr?'Transfer'+(t.biaya>0?' · admin '+rp(t.biaya):''):bm(t.bank)}${t.catatan?' · '+esc(t.catatan):''}</small></div>
     <b class="${m?'in':tr?'':'out'}">${m?'+':tr?'':'-'}${rp(t.jumlah)}</b></div>`;
 };
 const donut=(l,tipe,judul)=>{
   const m={};
-  l.filter(t=>t.tipe==tipe).forEach(t=>{const c=S.cats.find(c=>c.id==t.kategori)||{id:'?',nama:'Tanpa kategori'};
+  l.filter(t=>t.tipe==tipe&&t.kategori!='adj').forEach(t=>{const c=S.cats.find(c=>c.id==t.kategori)||{id:'?',nama:'Tanpa kategori'};
     (m[c.id]=m[c.id]||{c,v:0}).v+=Number(t.jumlah)});
   if(tipe=='keluar')l.filter(t=>t.tipe=='transfer'&&t.biaya>0).forEach(t=>{(m.fee=m.fee||{c:{id:'fee',nama:'Biaya admin'},v:0}).v+=Number(t.biaya)});
   const e=Object.values(m).sort((a,b)=>b.v-a.v),tot=e.reduce((a,x)=>a+x.v,0);let cu=0;
@@ -354,13 +354,13 @@ const donut=(l,tipe,judul)=>{
 
 const V={
   trx(){
-    const l=mt(),h=x=>hide?'Rp •••••':rp(x),days=[...new Set(l.map(x=>x.tanggal))].sort().reverse();
+    const l=mt(),h=x=>hide?'Rp •••••':rp(x);
     return '<h1>Transaksi</h1>'+chips()+`<div class="hero"><small>Total saldo</small>
       <div class="big">${h(total())}<button class="eye" onclick="hide=!hide;draw()" aria-label="Tampilkan atau sembunyikan saldo">${hide?'🙈':'👁'}</button></div>
-      <div class="pp"><div><small>↓ Pemasukan</small><b>${h(sum(l,'masuk'))}</b></div><div><small>↑ Pengeluaran</small><b>${h(sum(l,'keluar'))}</b></div></div></div>`+
-      (days.map(d=>{const dl=l.filter(x=>x.tanggal==d),dk=sum(dl,'keluar');return `<div class="dh"><div class="day">${new Date(d+'T00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long'})}</div>${dk>0?`<small class="dt">-${h(dk)}</small>`:''}</div><div class="grp">`+dl.sort((a,b)=>String(b.jam||'').localeCompare(String(a.jam||''))).map(row).join('')+'</div>'}).join('')+
-      (l.length?'<p class="mt" style="font-size:12px;margin-top:16px">Ketuk transaksi untuk menghapus.</p>':
-      '<div class="card empty"><b>Belum ada transaksi</b><p class="mt">Tambahkan pemasukan atau pengeluaran pertama Anda. Hanya butuh hitungan detik.</p></div>'));
+      <div class="pp"><div><small>↓ Pemasukan</small><b>${h(sum(l,'masuk'))}</b></div><div><small>↑ Pengeluaran</small><b>${h(sum(l,'keluar'))}</b></div></div></div>
+      <div class="card"><input class="srch" placeholder="Cari catatan atau kategori…" value="${esc(Fq.q)}" oninput="Fq.q=this.value;tl()">
+      <div class="rw" style="margin-top:8px"><select class="srch" onchange="Fq.k=this.value;tl()"><option value="">Semua kategori</option>${S.cats.map(c=>`<option value="${c.id}" ${c.id==Fq.k?'selected':''}>${esc(c.nama)} (${c.tipe=='masuk'?'masuk':'keluar'})</option>`).join('')}</select>
+      <select class="srch" onchange="Fq.b=this.value;tl()"><option value="">Semua dompet</option>${S.banks.map(b=>`<option value="${b.id}" ${b.id==Fq.b?'selected':''}>${esc(b.nama)}</option>`).join('')}</select></div></div><div id="tl">${trxList()}</div>`;
   },
   ring(){
     const l=mt(),tr=[...Array(6)].map((_,i)=>{
@@ -380,7 +380,7 @@ const V={
       CL={over:'var(--r)',warn:'var(--y)',ok:'var(--g)'},
       bar=(p,s)=>`<div class="stk"><i style="width:${Math.min(p,100)}%;background:${CL[s]}"></i></div>`,
       ts_=st(ts,tb),tp=Math.round(ts/(tb||1)*100);
-    return '<h1>Anggaran</h1>'+chips()+`<div class="card"><div class="rw"><b>Ringkasan</b><button class="x" style="color:var(--g)" onclick="angForm()">Atur</button></div>`+
+    return '<h1>Anggaran</h1>'+chips()+ringk()+`<div class="card"><div class="rw"><b>Ringkasan</b><button class="x" style="color:var(--g)" onclick="angForm()">Atur</button></div>`+
       (A.length?`${cur?`<small class="mt">${hl} hari tersisa</small>`:''}
       <div class="rw" style="margin-top:10px"><div><small class="mt">Terpakai sejauh ini</small><b style="display:block;font-size:20px">${rp(ts)}</b></div><div style="text-align:right"><small class="mt">Total anggaran</small><b style="display:block;font-size:20px">${rp(tb)}</b></div></div>
       ${bar(ts/tb*100,ts_)}<p class="${ts_=='over'?'out':ts_=='warn'?'warn':''}">${ts_=='over'?`Melebihi anggaran ${rp(ts-tb)}.`:ts_=='warn'?`Hati-hati, ${tp}% sudah terpakai. Sisa <b>${rp(tb-ts)}</b>.`:`Bagus! Anda memiliki <b class="in">${rp(tb-ts)}</b> tersisa.`}</p>
@@ -394,7 +394,7 @@ const V={
     const sb=bTot(),sa=aTot(),off=S.aset.filter(a=>a.aktif===false).reduce((a,x)=>a+Number(x.nilai),0),
       su=t=>S.utang.filter(u=>u.tipe==t).reduce((a,u)=>a+Number(u.sisa),0),
       pj=su('pinjam'),bg=su('beri'),nb=sb+sa+bg-pj,d=(sb+sa+pj)||1;
-    return `<div class="hero"><small>Nilai bersih</small><div class="big">${rp(nb)}</div></div>
+    return `<div class="hero"><small>Nilai bersih</small><div class="big">${rp(nb)}</div></div>${nbChart(nb)}
       <div class="card">${[['Saldo dompet',sb,''],['Aset aktif',sa,''],['Dipinjamkan',bg,'in'],['Total utang',-pj,'out']].map(([k,v,c])=>`<div class="it"><span class="g mt">${k}</span><b class="${c}">${rp(v)}</b></div>`).join('')}
       <div class="stk"><i style="width:${sb/d*100}%;background:#6aa0d6"></i><i style="width:${sa/d*100}%;background:var(--g)"></i><i style="width:${pj/d*100}%;background:var(--r)"></i></div>
       <small class="mt">Dompet ${Math.round(sb/d*100)}%, Aset ${Math.round(sa/d*100)}%, Utang ${Math.round(pj/d*100)}%</small>
@@ -412,7 +412,7 @@ const V={
   utang(){
     const L=t=>S.utang.filter(u=>u.tipe==t),s=l=>l.reduce((a,u)=>a+Number(u.sisa),0),
       it=u=>`<div class="card" onclick="utangDetail('${u.id}')"><div class="rw"><b>${esc(u.nama)}</b><b class="${u.tipe=='beri'?'in':'out'}">${u.sisa>0?rp(u.sisa):'Lunas'}</b></div>
-        <small class="mt">${u.tipe=='beri'?'Dipinjamkan':'Dipinjam'} ${rp(u.jumlah)}${u.catatan?' - '+esc(u.catatan):''}</small>
+        <small class="mt">${u.tipe=='beri'?'Dipinjamkan':'Dipinjam'} ${rp(u.jumlah)}${u.catatan?' - '+esc(u.catatan):''}</small>${tempoU(u)}
         <div class="stk"><i style="width:${u.jumlah>0?(1-u.sisa/u.jumlah)*100:100}%;background:var(--g)"></i></div></div>`;
     return `<div class="card rw" style="text-align:center"><div style="flex:1"><small class="mt">Dipinjam</small><b class="out" style="display:block;font-size:20px">${rp(s(L('pinjam')))}</b></div>
       <div style="flex:1"><small class="mt">Dipinjamkan</small><b class="in" style="display:block;font-size:20px">${rp(s(L('beri')))}</b></div></div>`+
@@ -432,9 +432,9 @@ const V={
     return `<div class="card"><small class="mt">Transaksi di sini dibuat otomatis setiap bulan pada tanggalnya (dicek tiap hari), dan saldo dompet ikut berubah. Cocok untuk gaji atau cicilan.</small></div>`+
       (S.rutin.map(r=>{
         const k=S.cats.find(c=>c.id==r.kategori),m=r.tipe=='masuk',tk=String(r.terakhir||'');
-        return `<div class="card" onclick="rutinForm('${r.id}')" style="${r.aktif?'':'opacity:.6'}"><div class="rw"><div class="it" style="padding:0;flex:1">${ic(k||{nama:'?'})}
-          <div class="g"><b>${esc(r.nama)}</b><small>Tiap tanggal ${esc(r.hari)} · ${bm(r.bank)}</small></div></div>
-          <b class="${m?'in':'out'}">${m?'+':'-'}${rp(r.jumlah)}</b></div>
+        return `<div class="card" onclick="rutinForm('${r.id}')" style="${r.aktif?'':'opacity:.6'}"><div class="rw"><div class="it" style="padding:0;flex:1">${r.tipe=='transfer'?'<div class="ic" style="background:#ffffff1f">🔁</div>':ic(k||{nama:'?'})}
+          <div class="g"><b>${esc(r.nama)}</b><small>Tiap tanggal ${esc(r.hari)} · ${bm(r.bank)}${r.tipe=='transfer'?' → '+bm(r.bank2):''}</small></div></div>
+          <b class="${m?'in':r.tipe=='transfer'?'':'out'}">${m?'+':r.tipe=='transfer'?'':'-'}${rp(r.jumlah)}</b></div>
           <div class="rw" style="margin-top:8px"><small class="mt">${tk?'Terakhir: '+BL[+tk.slice(5,7)-1]+' '+tk.slice(0,4):'Belum pernah berjalan'}</small>${sw(r.aktif,`togR('${r.id}',this.checked)`)}</div></div>`}).join('')||
       '<div class="card empty"><b>Belum ada transaksi otomatis</b><p class="mt">Tekan + untuk menambah, misalnya gaji tiap tanggal 25.</p></div>');
   },
@@ -449,9 +449,21 @@ const V={
       <p class="gl">Tampilan</p><div class="grp">${rw(['tema','🎨','#ffd60a','Tema warna',TEMA[tema][0]])}</div><p class="gl">Keamanan</p><div class="grp"><div class="row2" onclick="lock()"><div class="ic" style="background:#ef5b5b33">🔒</div><span class="g">Kunci aplikasi sekarang</span><span class="chev">›</span></div></div>
       <p class="mt" style="font-size:12px;margin:10px 4px"></p>`;
   },
+  target(){
+    const sv=x=>isA(x)?Number((S.aset.find(a=>a.id==String(x).slice(2))||{}).nilai||0):Number((S.banks.find(b=>b.id==x)||{}).saldo||0);
+    return S.target.map(t=>{
+      const v=sv(t.sumber),j=Number(t.jumlah),p=Math.min(100,Math.round(v/j*100)),sisa=Math.max(0,j-v),
+        dl=t.tenggat?Math.ceil((new Date(t.tenggat+'T00:00')-new Date())/864e5):null,
+        per=dl>0&&sisa>0?Math.ceil(sisa/Math.max(1,Math.ceil(dl/30))):0;
+      return `<div class="card" onclick="targetForm('${t.id}')"><div class="rw"><b>${esc(t.nama)}</b><b class="${p>=100?'in':''}">${p}%</b></div>
+        <small class="mt">${rp(v)} dari ${rp(j)} · ${bm(t.sumber)}</small>
+        <div class="stk"><i style="width:${p}%;background:${p>=100?'var(--pos)':'var(--g)'}"></i></div>
+        <small class="${dl!==null&&dl<0&&sisa>0?'out':'mt'}">${p>=100?'🎉 Target tercapai':'Kurang '+rp(sisa)+(dl===null?'':dl<0?' · lewat tenggat':' · '+dl+' hari lagi'+(per?' · nabung '+rp(per)+'/bulan':''))}</small></div>`}).join('')||
+      '<div class="card empty"><b>Belum ada target</b><p class="mt">Buat target, misalnya "Laptop", lalu pilih dompet atau aset tempat uangnya disimpan. Tekan +.</p></div>';
+  },
   akun(){
     const sb=sub=='set'&&pg;
-    return (sb?'':`<h1>Akun</h1><div class="chips">${[['bersih','Nilai bersih'],['aset','Aset'],['utang','Utang'],['set','Pengaturan']].map(([k,l])=>`<button class="chip ${sub==k?'on':''}" onclick="goSub('${k}')">${l}</button>`).join('')}</div>`)+V[sub]();
+    return (sb?'':`<h1>Akun</h1><div class="chips">${[['bersih','Nilai bersih'],['aset','Aset'],['utang','Utang'],['target','Target'],['set','Pengaturan']].map(([k,l])=>`<button class="chip ${sub==k?'on':''}" onclick="goSub('${k}')">${l}</button>`).join('')}</div>`)+V[sub]();
   }
 };
 const NAV=[['trx','🧾','Transaksi'],['dash','📊','Anggaran'],['ring','📈','Ringkasan'],['akun','👛','Akun']];
@@ -484,7 +496,10 @@ function closeM(){$('#md').classList.remove('o')}
 const del=(a,id,t)=>`<p style="text-align:center"><button class="x" onclick="if(confirm('${t}'))run('${a}',{id:'${id}'})">Hapus</button></p>`;
 
 /* ---------- transaksi ---------- */
-function trxForm(){
+function trxForm(id){
+  const o=id&&S.trx.find(x=>x.id==id);
+  if(o&&o.kategori=='adj')return delTrx(id);
+  if(o&&S.banks.length){F={id,tipe:o.tipe,bank:o.bank,bank2:o.bank2||o.bank,kat:o.kategori,jumlah:o.jumlah,tanggal:o.tanggal,jam:o.jam||nowT(),biaya:o.biaya||'',catatan:o.catatan||''};return fr()}
   if(!S.banks.length)return alert('Tambah dompet dulu di Akun, Pengaturan, Dompet.');
   F={tipe:'keluar',bank:S.banks[0].id,bank2:S.banks[1]?S.banks[1].id:(S.aset[0]?'a:'+S.aset[0].id:S.banks[0].id),kat:'',jumlah:'',tanggal:today(),jam:nowT(),biaya:'',catatan:''};
   fr();
@@ -494,7 +509,7 @@ function fr(){
   if(!tr&&!ks.find(c=>c.id==F.kat))F.kat=ks[0]?ks[0].id:'';
   const bo=v=>S.banks.map(b=>`<option value="${b.id}" ${b.id==v?'selected':''}>${esc(b.nama)} (${rp(b.saldo)})</option>`).join('');
   const bo2=v=>`<optgroup label="Dompet">${bo(v)}</optgroup>`+(S.aset.length?`<optgroup label="Aset / investasi">${S.aset.map(a=>`<option value="a:${a.id}" ${('a:'+a.id)==v?'selected':''}>${esc(a.nama)} (${rp(a.nilai)})</option>`).join('')}</optgroup>`:'');
-  modal('Tambah transaksi',
+  modal(F.id?'Edit transaksi':'Tambah transaksi',
     (tr?'':`<p class="lb">Kategori</p><div class="cg">${ks.map(c=>`<button class="ch ${c.id==F.kat?'on':''}" onclick="F.kat='${c.id}';fr()">${esc(c.ikon||emj(c.nama))} ${esc(c.nama)}</button>`).join('')}<button class="ch" onclick="newKat()">+ Baru</button></div>`)+
     `<div class="fr" style="margin-top:12px"><span>${tr?'Dari':'Akun'}</span><button class="pk" onclick="pick('F','bank')">${bm(F.bank)}</button></div>`+
     (tr?`<div class="fr"><span>Ke</span><button class="pk" onclick="pick('F','bank2',1)">${bm(F.bank2)}</button></div>`:'')+
@@ -502,7 +517,7 @@ function fr(){
     <div class="fr"><span>Jam</span><input type="time" value="${F.jam}" onchange="F.jam=this.value"></div>
     ${tr?`<div class="fr"><span>Biaya admin</span><input type="number" inputmode="decimal" placeholder="Opsional" value="${esc(F.biaya)}" oninput="F.biaya=this.value"></div><p class="mt" style="font-size:12px;margin:8px 0 0">Biaya admin ikut dipotong dari dompet asal. Jika tujuannya aset, nilai aset bertambah sebesar jumlah transfer.</p>`:''}
     <div class="fr"><span>Catatan</span><input placeholder="Tulis catatan" value="${esc(F.catatan)}" oninput="F.catatan=this.value"></div>
-    <button class="sv" onclick="saveTrx(this)">Simpan</button>`,
+    <button class="sv" onclick="saveTrx(this)">Simpan</button>${F.id?`<p style="text-align:center"><button class="x" onclick="delTrx('${F.id}')">Hapus transaksi</button></p>`:''}`,
     `<div class="seg">${[['keluar','Pengeluaran'],['masuk','Pemasukan'],['transfer','Transfer']].map(([k,l])=>`<button class="${F.tipe==k?'on':''}" onclick="F.tipe='${k}';fr()">${l}</button>`).join('')}</div>
     <input class="amt" type="number" inputmode="decimal" placeholder="0" value="${F.jumlah}" oninput="F.jumlah=this.value">`);
 }
@@ -514,9 +529,9 @@ function saveTrx(btn){
   const tr=F.tipe=='transfer',j=Number(F.jumlah),bi=tr?Math.max(0,Number(F.biaya)||0):0;
   if(!(j>0))return alert('Isi jumlah lebih dari 0');
   if(tr&&F.bank==F.bank2)return alert('Dompet asal dan tujuan tidak boleh sama');
-  const d={id:'i'+Math.random().toString(16).slice(2,11).padEnd(9,'0'),tipe:F.tipe,bank:F.bank,bank2:tr?F.bank2:'',kategori:tr?'':F.kat,jumlah:j,biaya:bi,tanggal:F.tanggal,jam:F.jam||nowT(),catatan:F.catatan};
+  const d={id:F.id||'i'+Math.random().toString(16).slice(2,11).padEnd(9,'0'),tipe:F.tipe,bank:F.bank,bank2:tr?F.bank2:'',kategori:tr?'':F.kat,jumlah:j,biaya:bi,tanggal:F.tanggal,jam:F.jam||nowT(),catatan:F.catatan};
   ym=F.tanggal.slice(0,7);tab='trx';
-  run('addTrx',d,btn,()=>{S.trx.push({...d});applyTrx(d,1)});
+  F.id?run('editTrx',d,btn,()=>{const o=S.trx.find(x=>x.id==d.id);if(o){applyTrx(o,-1);S.trx=S.trx.filter(x=>x!=o)}S.trx.push({...d});applyTrx(d,1)}):run('addTrx',d,btn,()=>{S.trx.push({...d});applyTrx(d,1)});
 }
 
 /* ---------- dompet / bank ---------- */
@@ -530,7 +545,7 @@ function bankForm(i){
     <div class="fr"><span>Saldo</span><input id="bs" type="number" inputmode="decimal" value="${b.saldo}"></div>
     <div class="fr"><span>Logo</span><input id="bl" type="file" accept="image/*" onchange="pickLogo(this)"></div>
     ${b.logo?`<div class="fr"><span>Logo sekarang</span><span class="rw">${lgo(b)}<button class="x" onclick="LG='';this.closest('.fr').remove()">Hapus logo</button></span></div>`:''}
-    <p class="mt" style="font-size:12px;margin:10px 0 0">Mengubah saldo di sini tidak membuat catatan transaksi.</p>
+    <p class="mt" style="font-size:12px;margin:10px 0 0">Jika saldo diubah, selisihnya dicatat sebagai transaksi Penyesuaian saldo (tidak dihitung pemasukan/pengeluaran).</p>
     <button class="sv" onclick="saveBank('${i||''}',this)">Simpan</button>
     ${i?del('delBank',i,'Hapus dompet ini? Transaksi lama tetap ada.'):''}`);
 }
@@ -608,10 +623,11 @@ function utangForm(){
     <div class="fr"><span>Nama</span><input id="un" placeholder="Nama orang"></div>
     <div class="fr"><span>Jumlah</span><input id="uj" type="number" inputmode="decimal"></div>
     <div class="fr"><span>Catatan</span><input id="uc" placeholder="Opsional"></div>
+    <div class="fr"><span>Jatuh tempo</span><input id="ud" type="date"></div>
     <button class="sv" onclick="saveUtang(this)">Simpan</button>`);
 }
 function saveUtang(btn){
-  const d={tipe:$('#ut').value,nama:$('#un').value.trim(),jumlah:Number($('#uj').value),catatan:$('#uc').value};
+  const d={tipe:$('#ut').value,nama:$('#un').value.trim(),jumlah:Number($('#uj').value),catatan:$('#uc').value,tempo:$('#ud').value};
   if(!d.nama||!(d.jumlah>0))return alert('Isi nama dan jumlah');
   run('saveUtang',d,btn);
 }
@@ -626,21 +642,21 @@ function utangDetail(id){
 function rutinForm(id){
   if(!S.banks.length)return alert('Tambah dompet dulu di Akun, Pengaturan, Dompet.');
   const r=S.rutin.find(x=>x.id==id);
-  R=r?{...r}:{id:'',nama:'',tipe:'masuk',jumlah:'',hari:25,bank:S.banks[0].id,kategori:'',aktif:true};
+  R=r?{...r}:{id:'',nama:'',tipe:'masuk',jumlah:'',hari:25,bank:S.banks[0].id,bank2:'',kategori:'',aktif:true};
   rr();
 }
 function rr(){
   const ks=S.cats.filter(c=>c.tipe==R.tipe);
-  if(!ks.find(c=>c.id==R.kategori))R.kategori=ks[0]?ks[0].id:'';
+  if(R.tipe!='transfer'&&!ks.find(c=>c.id==R.kategori))R.kategori=ks[0]?ks[0].id:'';if(R.tipe=='transfer'&&!R.bank2)R.bank2=S.banks.find(b=>b.id!=R.bank)?S.banks.find(b=>b.id!=R.bank).id:(S.aset[0]?'a:'+S.aset[0].id:'');
   modal(R.id?'Edit otomatis':'Tambah otomatis',
     `<div class="fr"><span>Nama</span><input placeholder="Gaji bulanan" value="${esc(R.nama)}" oninput="R.nama=this.value"></div>
     <div class="fr"><span>Tiap tanggal</span><input type="number" inputmode="numeric" min="1" max="31" value="${esc(R.hari)}" oninput="R.hari=this.value" style="width:90px"></div>
-    <div class="fr"><span>Masuk ke dompet</span><select onchange="R.bank=this.value"><button class="pk" onclick="pick('R','bank')">${bm(R.bank)}</button></select></div>
-    <div class="fr"><span>Kategori</span><select onchange="R.kategori=this.value">${ks.map(c=>`<option value="${c.id}" ${c.id==R.kategori?'selected':''}>${esc(c.nama)}</option>`).join('')||'<option value="">(belum ada)</option>'}</select></div>
+    <div class="fr"><span>${R.tipe=='masuk'?'Masuk ke dompet':'Dari dompet'}</span><button class="pk" onclick="pick('R','bank')">${bm(R.bank)}</button></div>
+    ${R.tipe=='transfer'?`<div class="fr"><span>Ke</span><button class="pk" onclick="pick('R','bank2',1)">${bm(R.bank2)}</button></div>`:''}<div class="fr" ${R.tipe=='transfer'?'hidden':''}><span>Kategori</span><select onchange="R.kategori=this.value">${ks.map(c=>`<option value="${c.id}" ${c.id==R.kategori?'selected':''}>${esc(c.nama)}</option>`).join('')||'<option value="">(belum ada)</option>'}</select></div>
     <div class="fr"><span>Aktif</span><label class="sw"><input type="checkbox" ${R.aktif?'checked':''} onchange="R.aktif=this.checked"><i></i></label></div>
     <p class="mt" style="font-size:12px">Tanggal 29 sampai 31 otomatis menyesuaikan akhir bulan yang lebih pendek. Jika tanggal bulan ini sudah lewat, mulai berjalan bulan depan.</p>
     <button class="sv" onclick="saveRutin(this)">Simpan</button>${R.id?del('delRutin',R.id,'Hapus transaksi otomatis ini? Transaksi yang sudah tercatat tetap ada.'):''}`,
-    `<div class="seg">${[['masuk','Pemasukan'],['keluar','Pengeluaran']].map(([k,l])=>`<button class="${R.tipe==k?'on':''}" onclick="R.tipe='${k}';rr()">${l}</button>`).join('')}</div>
+    `<div class="seg">${[['masuk','Pemasukan'],['keluar','Pengeluaran'],['transfer','Transfer']].map(([k,l])=>`<button class="${R.tipe==k?'on':''}" onclick="R.tipe='${k}';rr()">${l}</button>`).join('')}</div>
     <input class="amt" type="number" inputmode="decimal" placeholder="0" value="${esc(R.jumlah)}" oninput="R.jumlah=this.value">`);
 }
 function saveRutin(btn){
@@ -648,15 +664,64 @@ function saveRutin(btn){
   if(!String(R.nama).trim())return alert('Isi nama');
   if(!(j>0))return alert('Isi jumlah lebih dari 0');
   if(!(h>=1&&h<=31))return alert('Tanggal harus 1 sampai 31');
-  run('saveRutin',{id:R.id,nama:String(R.nama).trim(),tipe:R.tipe,jumlah:j,hari:h,bank:R.bank,kategori:R.kategori,aktif:R.aktif},btn);
+  if(R.tipe=='transfer'&&(!R.bank2||R.bank2==R.bank))return alert('Pilih tujuan yang berbeda dari dompet asal');
+  run('saveRutin',{id:R.id,nama:String(R.nama).trim(),tipe:R.tipe,jumlah:j,hari:h,bank:R.bank,bank2:R.bank2,kategori:R.kategori,aktif:R.aktif},btn);
 }
 function togR(id,on){const r=S.rutin.find(x=>x.id==id);if(r)r.aktif=on;bg('toggleRutin',{id,aktif:on})}
+
+const Fq={q:'',k:'',b:''};
+const tl=()=>{$('#tl').innerHTML=trxList()};
+function trxList(){   // daftar transaksi; saat cari/filter aktif, mencari di semua bulan yang dimuat
+  const act=Fq.q||Fq.k||Fq.b,q=Fq.q.toLowerCase(),
+    l=(act?S.trx:mt()).filter(t=>(!Fq.k||t.kategori==Fq.k)&&(!Fq.b||t.bank==Fq.b||t.bank2==Fq.b)&&(!q||String(t.catatan||'').toLowerCase().includes(q)||((S.cats.find(c=>c.id==t.kategori)||{}).nama||'').toLowerCase().includes(q))),
+    days=[...new Set(l.map(x=>x.tanggal))].sort().reverse(),
+    o=act?{weekday:'short',day:'numeric',month:'short',year:'numeric'}:{weekday:'long',day:'numeric',month:'long'};
+  return days.map(d=>`<div class="day">${new Date(d+'T00:00').toLocaleDateString('id-ID',o)}</div><div class="grp">${l.filter(x=>x.tanggal==d).sort((a,b)=>String(b.jam||'').localeCompare(String(a.jam||''))).map(row).join('')}</div>`).join('')+
+    (l.length?'<p class="mt" style="font-size:12px;margin-top:16px">Ketuk transaksi untuk mengubah atau menghapus.'+(act?' Pencarian mencakup semua bulan yang dimuat.':'')+'</p>':
+    act?'<div class="card empty"><b>Tidak ada hasil</b></div>':'<div class="card empty"><b>Belum ada transaksi</b><p class="mt">Tambahkan pemasukan atau pengeluaran pertama Anda. Hanya butuh hitungan detik.</p></div>');
+}
+function ringk(){   // banding bulan lalu, rata-rata harian, proyeksi
+  const cur=ym==today().slice(0,7),d0=new Date(+ym.slice(0,4),+ym.slice(5)-2,1),pv=d0.getFullYear()+'-'+String(d0.getMonth()+1).padStart(2,'0'),
+    e=sum(mt(),'keluar'),ep=sum(S.trx.filter(t=>String(t.tanggal).startsWith(pv)),'keluar'),
+    dim=new Date(+ym.slice(0,4),+ym.slice(5),0).getDate(),dn=cur?new Date().getDate():dim,avg=e/dn,df=ep>0?Math.round((e-ep)/ep*100):null;
+  return `<div class="card"><b>Pengeluaran ${BL[+ym.slice(5)-1]}</b><div class="pp" style="margin-top:10px">
+    <div><small>Rata-rata/hari</small><b>${rp(avg)}</b></div><div><small>${cur?'Proyeksi akhir bulan':'Total bulan ini'}</small><b>${rp(cur?avg*dim:e)}</b></div></div>
+    <p class="${df>0?'out':'in'}" style="margin:10px 0 0">${df===null?'Belum ada data bulan lalu.':(df>0?'▲ ':'▼ ')+Math.abs(df)+'% '+(df>0?'lebih boros':'lebih hemat')+' dari bulan lalu ('+rp(ep)+')'}</p></div>`;
+}
+function nbChart(now){   // grafik tren nilai bersih dari sheet Riwayat
+  const p=S.riw.slice(-90).map(r=>Number(r.nilai));
+  if(!p.length||p[p.length-1]!==now)p.push(now);
+  if(p.length<2)return '<div class="card"><b>Tren nilai bersih</b><p class="mt">Grafik muncul setelah ada data beberapa hari. Nilai bersih dicatat otomatis setiap hari.</p></div>';
+  const lo=Math.min(...p),hi=Math.max(...p),r=(hi-lo)||1,d=now-p[0],
+    pts=p.map((v,i)=>(i/(p.length-1)*300).toFixed(1)+','+(86-(v-lo)/r*80).toFixed(1)).join(' ');
+  return `<div class="card"><div class="rw"><b>Tren nilai bersih</b><small class="${d<0?'out':'in'}">${d<0?'▼ ':'▲ '}${rp(Math.abs(d))}</small></div>
+    <svg viewBox="0 0 300 90" preserveAspectRatio="none" style="width:100%;height:110px;margin-top:8px"><polyline points="${pts}" fill="none" stroke="var(--g)" stroke-width="3" vector-effect="non-scaling-stroke"/></svg>
+    <div class="rw"><small class="mt">${rp(lo)}</small><small class="mt">${p.length} catatan terakhir</small><small class="mt">${rp(hi)}</small></div></div>`;
+}
+const tempoU=u=>{if(!u.tempo||!(u.sisa>0))return'';const d=Math.ceil((new Date(u.tempo+'T00:00')-new Date())/864e5);
+  return `<small class="${d<0?'out':d<=7?'warn':'mt'}" style="display:block">${d<0?'⚠ Lewat tempo '+(-d)+' hari':'Jatuh tempo '+u.tempo.split('-').reverse().join('/')+' ('+(d<=0?'hari ini':d+' hari lagi')+')'}</small>`};
+const srcOpts=v=>`<optgroup label="Dompet">${S.banks.map(b=>`<option value="${b.id}" ${b.id==v?'selected':''}>${esc(b.nama)}</option>`).join('')}</optgroup>`+(S.aset.length?`<optgroup label="Aset / investasi">${S.aset.map(a=>`<option value="a:${a.id}" ${('a:'+a.id)==v?'selected':''}>${esc(a.nama)}</option>`).join('')}</optgroup>`:'');
+function targetForm(id){
+  if(!S.banks.length)return alert('Tambah dompet dulu di Akun, Pengaturan, Dompet.');
+  const t=S.target.find(x=>x.id==id)||{nama:'',jumlah:'',sumber:S.banks[0].id,tenggat:''};
+  modal(id?'Edit target':'Tambah target',`<div class="fr"><span>Nama</span><input id="tn" placeholder="Laptop, Liburan" value="${esc(t.nama)}"></div>
+    <div class="fr"><span>Target (Rp)</span><input id="tj" type="number" inputmode="decimal" value="${t.jumlah}"></div>
+    <div class="fr"><span>Disimpan di</span><select id="tsrc">${srcOpts(t.sumber)}</select></div>
+    <div class="fr"><span>Tenggat</span><input id="td" type="date" value="${esc(t.tenggat)}"></div>
+    <p class="mt" style="font-size:12px">Progress mengikuti saldo dompet atau nilai aset yang dipilih.</p>
+    <button class="sv" onclick="saveTarget('${id||''}',this)">Simpan</button>${id?del('delTarget',id,'Hapus target ini?'):''}`);
+}
+function saveTarget(id,btn){
+  const d={id,nama:$('#tn').value.trim(),jumlah:Number($('#tj').value),sumber:$('#tsrc').value,tenggat:$('#td').value};
+  if(!d.nama||!(d.jumlah>0))return alert('Isi nama dan target lebih dari 0');
+  run('saveTarget',d,btn);
+}
 
 let tx=0,ty=0;
 addEventListener('touchstart',e=>{const t=e.touches[0];tx=t.clientX;ty=t.clientY},{passive:true});
 addEventListener('touchend',e=>{const t=e.changedTouches[0];
   if(tab=='akun'&&sub=='set'&&pg&&!$('#md').classList.contains('o')&&tx<40&&t.clientX-tx>80&&Math.abs(t.clientY-ty)<60)back()},{passive:true});
-const FA={dompet:()=>bankForm(),aset:()=>asetForm(),utang:()=>utangForm(),kat:()=>katForm('','keluar'),rutin:()=>rutinForm()};
+const FA={target:()=>targetForm(),dompet:()=>bankForm(),aset:()=>asetForm(),utang:()=>utangForm(),kat:()=>katForm('','keluar'),rutin:()=>rutinForm()};
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 init();
 </script>
