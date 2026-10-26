@@ -23,7 +23,10 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid 
 .chip{background:none;color:var(--ink);border:2px solid var(--ink);font-size:12px}
 .chip.on{background:var(--ink);color:var(--paper);font-weight:700}
 .day{display:inline-block;background:var(--ink);color:var(--paper);padding:4px 10px;margin:22px 0 8px;font-size:11px;text-transform:none;letter-spacing:0}
-
+/* total pengeluaran per hari, di samping label tanggal */
+.dh{display:flex;align-items:center;gap:10px;margin:22px 0 8px}
+.dh .day{margin:0}
+.dt{font:700 12px var(--mono);color:var(--ink);letter-spacing:-.02em}
 /* kartu utama: bingkai tebal + kotak-kotak piksel di pojok */
 .hero{background:none;color:var(--ink);border:3px solid var(--ink);box-shadow:none}
 .hero:before{width:112px;height:112px;right:0;top:0;background:var(--ink);opacity:.2;
