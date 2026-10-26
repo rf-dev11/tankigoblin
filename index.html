@@ -358,7 +358,7 @@ const V={
     return '<h1>Transaksi</h1>'+chips()+`<div class="hero"><small>Total saldo</small>
       <div class="big">${h(total())}<button class="eye" onclick="hide=!hide;draw()" aria-label="Tampilkan atau sembunyikan saldo">${hide?'🙈':'👁'}</button></div>
       <div class="pp"><div><small>↓ Pemasukan</small><b>${h(sum(l,'masuk'))}</b></div><div><small>↑ Pengeluaran</small><b>${h(sum(l,'keluar'))}</b></div></div></div>`+
-      (days.map(d=>{const dl=l.filter(x=>x.tanggal==d),dk=sum(dl,'keluar');return `<div class="dh"><div class="day">${new Date(d+'T00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long'})}</div>${dk>0?`<small class="dt">${h(dk)}</small>`:''}</div><div class="grp">`+dl.sort((a,b)=>String(b.jam||'').localeCompare(String(a.jam||''))).map(row).join('')+'</div>'}).join('')+
+      (days.map(d=>{const dl=l.filter(x=>x.tanggal==d),dk=sum(dl,'keluar');return `<div class="dh"><div class="day">${new Date(d+'T00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long'})}</div>${dk>0?`<small class="dt">-${h(dk)}</small>`:''}</div><div class="grp">`+dl.sort((a,b)=>String(b.jam||'').localeCompare(String(a.jam||''))).map(row).join('')+'</div>'}).join('')+
       (l.length?'<p class="mt" style="font-size:12px;margin-top:16px">Ketuk transaksi untuk menghapus.</p>':
       '<div class="card empty"><b>Belum ada transaksi</b><p class="mt">Tambahkan pemasukan atau pengeluaran pertama Anda. Hanya butuh hitungan detik.</p></div>'));
   },
