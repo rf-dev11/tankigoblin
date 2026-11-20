@@ -75,3 +75,18 @@ nav .on{background:var(--y);color:var(--ink);border-color:var(--ink);font-weight
 .sw2{width:52px;height:52px;border:var(--bd);border-radius:14px;box-shadow:2px 2px 0 var(--ink);font:inherit;font-weight:800;color:var(--ink)}
 @media(min-width:700px){nav{left:0;right:0;margin:0 auto;width:min(calc(100% - 48px),480px)}.fab{bottom:calc(112px + env(safe-area-inset-bottom))}body{padding-bottom:calc(140px + env(safe-area-inset-bottom))}}
 @media(min-width:1024px){body{padding-left:120px;padding-bottom:40px}nav{top:12px;bottom:12px;left:12px;right:auto;margin:0;width:96px;flex-direction:column;justify-content:center;gap:8px}nav button{flex:none;min-height:68px}.fab{bottom:32px}}
+/* gaya tampilan: neo = bawaan; flat dan kaca dipilih di Pengaturan > Gaya tampilan */
+[data-gaya=flat]{--bg:#f5f7fa;--c2:#e9eef3}
+[data-gaya=flat] body{background:#f5f7fa}
+[data-gaya=flat] *{border-color:#0b22301a!important;border-width:1px!important;box-shadow:none!important}
+[data-gaya=flat] :is(.card,.grp,nav){box-shadow:0 1px 4px #0b223018!important}
+[data-gaya=flat] :is(.hero,.mh,.chip.on,nav .on,.seg .on,.ch.on,.po.on){border-color:transparent!important}
+[data-gaya=flat] :is(.card,.grp,.hero,.wc,.wr){border-radius:16px}
+[data-gaya=kaca]{--bg:#e4f3fb}
+[data-gaya=kaca] body{background:radial-gradient(circle at 12% 8%,#7fd8f5aa 0,#0000 42%),radial-gradient(circle at 90% 28%,#fdc22e88 0,#0000 38%),radial-gradient(circle at 25% 92%,#5ce1d099 0,#0000 45%) fixed,#e4f3fb}
+[data-gaya=kaca] *{border-color:#ffffffb8!important;border-width:1px!important;box-shadow:none!important}
+[data-gaya=kaca] :is(.card,.grp,nav,.ts,.plb,.pk,.po,.srch,.chip,.ch,.seg,.eye){background:#ffffff59;-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%)}
+[data-gaya=kaca] :is(.card,.grp,nav,.wc,.hero){box-shadow:0 8px 28px #0b22301f!important}
+[data-gaya=kaca] .hero{background:color-mix(in srgb,var(--p) 82%,#0000)}
+[data-gaya=kaca] :is(.chip.on,.ch.on,.po.on,nav .on){background:#fdc22ecc}
+[data-gaya=kaca] :is(.card,.grp,.hero,.wc,.wr,nav){border-radius:24px}

@@ -44,3 +44,15 @@ NAV[3][1]='👤';NAV.splice(3,0,['wallet','💳','Dompet']);
 $('#nv').innerHTML=NAV.map(([k,i,l])=>`<button data-k="${k}" onclick="go('${k}')"><span>${i}</span>${l}</button>`).join('');
 const _draw=draw;
 draw=function(d){_draw(d);if(tab=='wallet')$('#fab').classList.add('h')};
+
+/* gaya tampilan: neo (bawaan), flat, kaca. Gaya css ada di tema.css */
+const GAYA={neo:['Neobrutalism','🟨','Border tebal dan bayangan keras'],flat:['Minimalis','⬜','Bersih, tipis, tanpa bayangan tebal'],kaca:['Kaca','🔮','Transparan dan buram (glassmorphism)']};
+let gaya=WK('gaya','neo');if(!GAYA[gaya])gaya='neo';
+document.documentElement.dataset.gaya=gaya;
+function setGaya(k){if(!GAYA[k])k='neo';gaya=k;document.documentElement.dataset.gaya=k;WS('gaya',k);draw()}
+V.gaya=()=>`<div class="grp">${Object.entries(GAYA).map(([k,[n,i,d]])=>`<div class="row2" onclick="setGaya('${k}')"><div class="ic" style="background:#fdc22e55">${i}</div><div class="g"><b>${n}</b><small class="mt" style="display:block">${d}</small></div><b>${k==gaya?'✓':''}</b></div>`).join('')}</div><p class="mt" style="font-size:12px;margin:10px 4px 0">Gaya dan Tema warna bisa digabung. Disimpan di perangkat ini.</p>`;
+const _set=V.set;
+V.set=function(){
+if(pg=='gaya')return `<div class="nb"><button class="bk" onclick="back()">‹ Pengaturan</button></div><h1>Gaya tampilan</h1>`+V.gaya();
+return _set().replace('</div><p class="gl">Keamanan</p>',`<div class="row2" onclick="push('gaya')"><div class="ic" style="background:#fdc22e55">🖼️</div><span class="g">Gaya tampilan</span><span class="mt">${GAYA[gaya][0]}</span><span class="chev">›</span></div></div><p class="gl">Keamanan</p>`);
+};
