@@ -98,4 +98,7 @@ nav .on{background:var(--y);color:var(--ink);border-color:var(--ink);font-weight
 .wbt{display:flex;justify-content:space-between;align-items:flex-end;margin-top:8px}
 .wbt .wnm{margin:0;font-size:22px}
 .wbt small{opacity:.85;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
-.wc.wimg .wch,.wc.wimg .wno,.wc.wimg .wbt{display:none}
+.wc.wimg{color:#fff!important}
+.wc.wimg:after{content:"";position:absolute;left:0;right:0;bottom:0;height:58%;background:linear-gradient(#0000,#000000a6);pointer-events:none}
+.wc.wimg>*{position:relative;z-index:1}
+.wc.wimg .wno,.wc.wimg .wbt{text-shadow:0 1px 3px #0009}
