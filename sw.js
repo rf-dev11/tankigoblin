@@ -1,6 +1,6 @@
 // Service worker Celengan: aplikasi bisa dipasang dan terbuka cepat.
 // Network-first, jadi update index.html langsung terpakai. Data (API) tidak pernah disimpan di cache.
-const V = 'celengan-v3';
+const V = 'celengan-v4';
 const FILES = ['./', 'index.html', 'manifest.json','tema.css', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
