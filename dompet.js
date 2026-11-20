@@ -3,16 +3,48 @@
    Urutan dan warna kartu disimpan di perangkat ini (localStorage). */
 const WK=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
 const WS=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
-let WO=WK('wo',[]),WC=WK('wc',{}),WSEL='',WE=false;
+let WO=WK('wo',[]),WC=WK('wc',{}),WI=WK('wi',{}),WSEL='',WE=false;
 const WP=[['#fdc22e','#0b2230'],['#5ce1d0','#0b2230'],['#a8d8f0','#0b2230'],['#f25c27','#fff'],['#0b7bb8','#fff'],['#c7f2e8','#0b2230'],['#f58ac0','#0b2230'],['#a58bf0','#0b2230'],['#c9ccd1','#0b2230'],['#1c2b36','#fff']];
-const wcol=b=>WP[WC[b.id]!=null?WC[b.id]:Math.max(0,S.banks.findIndex(x=>x.id==b.id))%WP.length];
+const WD=[
+['repeating-linear-gradient(45deg,#ffffff38 0 2px,#0000 2px 13px),repeating-linear-gradient(-45deg,#ffffff38 0 2px,#0000 2px 13px),linear-gradient(135deg,#eceef1,#a5abb4 50%,#d9dce1)','#0b2230','Perak batik'],
+['linear-gradient(135deg,#34383f,#0c0e11)','#fff','Hitam'],
+['linear-gradient(135deg,#f7e7ac,#c9a24a 52%,#f0d58a)','#0b2230','Emas'],
+['linear-gradient(135deg,#1e3a8a,#0b7bb8)','#fff','Biru malam'],
+['linear-gradient(135deg,#f25c27,#fdc22e)','#0b2230','Senja'],
+['linear-gradient(135deg,#14b8a6,#a7f3d0)','#0b2230','Tosca'],
+['linear-gradient(135deg,#7c3aed,#f58ac0)','#fff','Ungu pink']];
+const WA=[...WP,...WD];
+const WCL='<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 8c2 2.5 2 5.5 0 8M12 5.5c3.5 3.8 3.5 9.2 0 13M16 3c5 5 5 13 0 18"/></svg>';
+const wcol=b=>{const m=WI[b.id];if(m)return[`url('${m.u}') center/cover no-repeat`,m.f];const i=WC[b.id];return WA[i!=null&&WA[i]?i:Math.max(0,S.banks.findIndex(x=>x.id==b.id))%WP.length]};
 const wlist=()=>[...S.banks].sort((a,b)=>{const x=WO.indexOf(a.id),y=WO.indexOf(b.id);return(x<0?999:x)-(y<0?999:y)});
 
 function wSel(id){WSEL=WSEL==id?'':id;draw()}
 function wMove(id,d){const l=wlist().map(b=>b.id),i=l.indexOf(id),j=i+d;if(j<0||j>=l.length)return;[l[i],l[j]]=[l[j],l[i]];WO=l;WS('wo',WO);draw()}
-function wSet(id,i){if(i==null)delete WC[id];else WC[id]=i;WS('wc',WC);closeM();draw()}
+function wSet(id,i){delete WI[id];WS('wi',WI);if(i==null)delete WC[id];else WC[id]=i;WS('wc',WC);closeM();draw()}
+function wImg(id,inp){
+const f=inp.files[0];if(!f)return;
+const im=new Image();
+im.onload=()=>{
+const W=640,H=404,c=document.createElement('canvas');c.width=W;c.height=H;
+const x=c.getContext('2d'),r=Math.max(W/im.width,H/im.height),w=im.width*r,h=im.height*r;
+x.drawImage(im,(W-w)/2,(H-h)/2,w,h);URL.revokeObjectURL(im.src);
+const d=x.getImageData(0,0,W,H).data;let s=0,n=0;
+for(let i=0;i<d.length;i+=388){s+=.299*d[i]+.587*d[i+1]+.114*d[i+2];n++}
+const o=WI[id];WI[id]={u:c.toDataURL('image/jpeg',.75),f:s/n>150?'#0b2230':'#fff'};
+try{localStorage.setItem('wi',JSON.stringify(WI))}
+catch(e){if(o)WI[id]=o;else delete WI[id];alert('Penyimpanan perangkat penuh. Hapus gambar kartu lain atau pakai gambar lebih kecil.');return}
+closeM();draw();
+};
+im.onerror=()=>alert('Gambar tidak bisa dibaca');
+im.src=URL.createObjectURL(f);
+}
 function wCol(id){
-modal('Warna kartu',`<div class="cg" style="margin-top:14px">${WP.map(([c],i)=>`<button class="sw2" style="background:${c}" onclick="wSet('${id}',${i})">${WC[id]==i?'✓':''}</button>`).join('')}</div><button class="sv" onclick="wSet('${id}',null)">Pakai warna bawaan</button>`);
+const sq=(a,i)=>`<button class="sw2" style="background:${a[0]}" onclick="wSet('${id}',${i})" aria-label="${a[2]||'Warna polos'}">${!WI[id]&&WC[id]==i?`<span style="color:${a[1]}">✓</span>`:''}</button>`;
+modal('Tampilan kartu',`<label class="sv" style="display:block;text-align:center">📷 ${WI[id]?'Ganti':'Pilih'} gambar kartu<input type="file" accept="image/*" hidden onchange="wImg('${id}',this)"></label>
+<p class="mt" style="font-size:12px;margin:8px 0 0">Gambar hanya disimpan di perangkat ini. Nama dan saldo tetap tampil di atas kartu.</p>
+<p class="lb">Desain</p><div class="cg">${WD.map((a,i)=>sq(a,i+WP.length)).join('')}</div>
+<p class="lb">Warna polos</p><div class="cg">${WP.map((a,i)=>sq(a,i)).join('')}</div>
+<button class="sv" onclick="wSet('${id}',null)">Pakai tampilan bawaan</button>`);
 }
 function wDet(id){
 const b=S.banks.find(x=>x.id==id);if(!b)return;
@@ -21,12 +53,13 @@ modal(esc(b.nama),`<div class="fr"><span>Saldo</span><b>${rp(b.saldo)}</b></div>
 <p class="lb">Transaksi terakhir</p><div class="grp">${t.map(row).join('')||'<p class="mt" style="padding:12px;margin:0">Belum ada transaksi.</p>'}</div>`);
 }
 const wcard=b=>{
-const [c,f]=wcol(b),s=b.id==WSEL;
-return `<div class="wi ${s?'sel':''}"><div class="wc" style="background:${c};color:${f}" onclick="wSel('${b.id}')">
+const [c,f]=wcol(b),s=b.id==WSEL,im=!!WI[b.id],tp=b.tipe||'Bank';
+return `<div class="wi ${s?'sel':''}"><div class="wc ${im?'wimg':''}" style="background:${c};color:${f}" onclick="wSel('${b.id}')">
 <div class="wt"><span class="wn">${mi(b)}${esc(b.nama)}</span><b class="wb">${hide?'Rp •••':rp(b.saldo)}</b></div>
-<div class="wm"><span>${esc(b.tipe||'Bank')}</span><b>${b.rek?'•••• '+esc(String(b.rek).slice(-4)):''}</b></div>
-<div class="wnm">${esc(b.nama)}</div></div>
-${s?`<div class="wa"><button onclick="wDet('${b.id}')">ⓘ Detail</button><button onclick="wCol('${b.id}')">🎨 Warna</button><button onclick="bankForm('${b.id}')">✎ Edit</button></div>`:''}</div>`;
+<div class="wch">${tp=='Bank'?'<i class="chip2"></i>':''}${WCL}</div>
+<div class="wno">${b.rek?'•••• •••• •••• '+esc(String(b.rek).slice(-4)):'&nbsp;'}</div>
+<div class="wbt"><span class="wnm">${esc(b.nama)}</span><small>${esc(tp)}</small></div></div>
+${s?`<div class="wa"><button onclick="wDet('${b.id}')">ⓘ Detail</button><button onclick="wCol('${b.id}')">🎨 Tampilan</button><button onclick="bankForm('${b.id}')">✎ Edit</button></div>`:''}</div>`;
 };
 V.wallet=()=>{
 const l=wlist();

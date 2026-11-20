@@ -60,8 +60,8 @@ nav .on{background:var(--y);color:var(--ink);border-color:var(--ink);font-weight
 .wh{margin:14px 4px 10px}.wh b{font-size:18px}
 .rb{width:40px;height:40px;margin-left:8px;background:#fff;color:var(--ink);border:2px solid var(--ink);border-radius:50%;font:inherit;font-size:20px;font-weight:700;box-shadow:2px 2px 0 var(--ink)}
 .rb.on{background:var(--y)}
-.wi+.wi{margin-top:-118px}.wi.sel+.wi{margin-top:14px}
-.wc{height:176px;border:var(--bd);border-radius:24px;box-shadow:var(--sh);padding:14px 16px;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.wi+.wi{margin-top:calc(58px - 63.05%)}.wi.sel+.wi{margin-top:14px}
+.wc{aspect-ratio:1.586;border:var(--bd);border-radius:24px;box-shadow:var(--sh);padding:14px 16px;position:relative;overflow:hidden;display:flex;flex-direction:column}
 .wt{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .wn{display:inline-flex;align-items:center;gap:8px;font-weight:700;background:#ffffff80;border:2px solid var(--ink);border-radius:99px;padding:4px 12px 4px 6px;color:var(--ink);min-width:0}
 .wb{background:#fff;color:var(--ink);border:2px solid var(--ink);border-radius:99px;padding:4px 12px;font-size:13px}
@@ -90,3 +90,12 @@ nav .on{background:var(--y);color:var(--ink);border-color:var(--ink);font-weight
 [data-gaya=kaca] .hero{background:color-mix(in srgb,var(--p) 82%,#0000)}
 [data-gaya=kaca] :is(.chip.on,.ch.on,.po.on,nav .on){background:#fdc22ecc}
 [data-gaya=kaca] :is(.card,.grp,.hero,.wc,.wr,nav){border-radius:24px}
+/* tampilan kartu seperti kartu kredit */
+.wch{display:flex;align-items:center;gap:12px;margin-top:auto}
+.wch svg{opacity:.8}
+.chip2{width:44px;height:33px;border-radius:7px;border:1.5px solid #0b223055;background:repeating-linear-gradient(90deg,#0000 0 10px,#0b223033 10px 11px),linear-gradient(135deg,#f3d98b,#c9a24a)}
+.wno{margin-top:8px;font-size:clamp(14px,4.4vw,19px);font-weight:600;letter-spacing:.12em;text-shadow:0 1px 0 #ffffff55,0 -1px 0 #0000002e}
+.wbt{display:flex;justify-content:space-between;align-items:flex-end;margin-top:8px}
+.wbt .wnm{margin:0;font-size:22px}
+.wbt small{opacity:.85;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.wc.wimg .wch,.wc.wimg .wno,.wc.wimg .wbt{display:none}
