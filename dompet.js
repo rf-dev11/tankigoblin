@@ -18,7 +18,11 @@ const WCL='<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="c
 const wcol=b=>{const m=WI[b.id];if(m)return[`url('${m.u}') center/cover no-repeat`,m.f];const i=WC[b.id];return WA[i!=null&&WA[i]?i:Math.max(0,S.banks.findIndex(x=>x.id==b.id))%WP.length]};
 const wlist=()=>[...S.banks].sort((a,b)=>{const x=WO.indexOf(a.id),y=WO.indexOf(b.id);return(x<0?999:x)-(y<0?999:y)});
 
-function wSel(id){WSEL=WSEL==id?'':id;draw()}
+function wSel(id){
+WSEL=WSEL==id?'':id;
+document.querySelectorAll('.wi').forEach(e=>e.classList.toggle('sel',!!WSEL&&e.dataset.id==WSEL));
+if(WSEL)setTimeout(()=>{const x=document.querySelector('.wi.sel .wax');if(x)x.scrollIntoView({behavior:'smooth',block:'center'})},280);
+}
 function wMove(id,d){const l=wlist().map(b=>b.id),i=l.indexOf(id),j=i+d;if(j<0||j>=l.length)return;[l[i],l[j]]=[l[j],l[i]];WO=l;WS('wo',WO);draw()}
 function wSet(id,i){delete WI[id];WS('wi',WI);if(i==null)delete WC[id];else WC[id]=i;WS('wc',WC);closeM();draw()}
 function wImg(id,inp){
@@ -54,12 +58,12 @@ modal(esc(b.nama),`<div class="fr"><span>Saldo</span><b>${rp(b.saldo)}</b></div>
 }
 const wcard=b=>{
 const [c,f]=wcol(b),s=b.id==WSEL,im=!!WI[b.id],tp=b.tipe||'Bank';
-return `<div class="wi ${s?'sel':''}"><div class="wc ${im?'wimg':''}" style="background:${c};color:${f}" onclick="wSel('${b.id}')">
+return `<div class="wi ${s?'sel':''}" data-id="${b.id}"><div class="wc ${im?'wimg':''}" style="background:${c};color:${f}" onclick="wSel('${b.id}')">
 <div class="wt"><span class="wn">${mi(b)}${esc(b.nama)}</span><b class="wb">${hide?'Rp •••':rp(b.saldo)}</b></div>
 <div class="wch">${tp=='Bank'?'<i class="chip2"></i>':''}${WCL}</div>
 <div class="wno">${b.rek?'•••• •••• •••• '+esc(String(b.rek).slice(-4)):'&nbsp;'}</div>
 <div class="wbt"><span class="wnm">${esc(b.nama)}</span><small>${esc(tp)}</small></div></div>
-${s?`<div class="wa"><button onclick="wDet('${b.id}')">ⓘ Detail</button><button onclick="wCol('${b.id}')">🎨 Tampilan</button><button onclick="bankForm('${b.id}')">✎ Edit</button></div>`:''}</div>`;
+<div class="wax"><div class="wa"><button onclick="wDet('${b.id}')">ⓘ Detail</button><button onclick="wCol('${b.id}')">🎨 Tampilan</button><button onclick="bankForm('${b.id}')">✎ Edit</button></div></div></div>`;
 };
 V.wallet=()=>{
 const l=wlist();

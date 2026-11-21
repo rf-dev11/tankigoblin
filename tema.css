@@ -67,7 +67,7 @@ nav .on{background:var(--y);color:var(--ink);border-color:var(--ink);font-weight
 .wb{background:#fff;color:var(--ink);border:2px solid var(--ink);border-radius:99px;padding:4px 12px;font-size:13px}
 .wm{display:flex;justify-content:space-between;margin-top:14px;font-size:13px;opacity:.85}
 .wnm{margin-top:auto;font-size:26px;font-weight:800;letter-spacing:-.02em}
-.wa{display:flex;gap:8px;margin-top:12px}
+.wa{display:flex;gap:8px;padding:12px 3px 4px;overflow:hidden;min-height:0}
 .wa button{flex:1;background:#fff;color:var(--ink);border:2px solid var(--ink);border-radius:14px;padding:10px 4px;font:inherit;font-size:13px;font-weight:700;box-shadow:2px 2px 0 var(--ink)}
 .wr{display:flex;justify-content:space-between;align-items:center;border:var(--bd);border-radius:18px;box-shadow:3px 3px 0 var(--ink);padding:10px 12px;margin-bottom:12px}
 .wa2 button{width:40px;height:40px;margin-left:6px;background:#fff;color:var(--ink);border:2px solid var(--ink);border-radius:12px;font:inherit;font-weight:700}
@@ -102,3 +102,8 @@ nav .on{background:var(--y);color:var(--ink);border-color:var(--ink);font-weight
 .wc.wimg:after{content:"";position:absolute;left:0;right:0;bottom:0;height:58%;background:linear-gradient(#0000,#000000a6);pointer-events:none}
 .wc.wimg>*{position:relative;z-index:1}
 .wc.wimg .wno,.wc.wimg .wbt{text-shadow:0 1px 3px #0009}
+/* animasi buka tutup kartu */
+.wc{isolation:isolate}
+.wi{transition:margin-top .5s var(--ease)}
+.wax{display:grid;grid-template-rows:0fr;opacity:0;visibility:hidden;transition:grid-template-rows .5s var(--ease),opacity .35s,visibility 0s .5s}
+.wi.sel .wax{grid-template-rows:1fr;opacity:1;visibility:visible;transition-delay:0s}
