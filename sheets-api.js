@@ -238,87 +238,98 @@
     });
     const spreadsheetId = created.id;
 
-    // 2. Ambil sheetId bawaan ("Sheet1") untuk dihapus setelah 10 tab dibuat
-    const meta0 = await gfetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets(properties(sheetId,title))`);
-    const defaultSheetId = meta0.sheets[0].properties.sheetId;
+    try {
+      // 2. Ambil sheetId bawaan ("Sheet1") untuk dihapus setelah 10 tab dibuat
+      const meta0 = await gfetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets(properties(sheetId,title))`);
+      const defaultSheetId = meta0.sheets[0].properties.sheetId;
 
-    const sheetNames = Object.keys(SHEETS);
-    const reqs = [];
+      const sheetNames = Object.keys(SHEETS);
+      const reqs = [];
 
-    // Tambahkan 10 tab Celengan
-    sheetNames.forEach((name, idx) => {
-      reqs.push({
-        addSheet: {
-          properties: {
-            sheetId: 100 + idx,
-            title: name,
-            index: idx,
-            gridProperties: { rowCount: 1000, columnCount: Math.max(10, SHEETS[name].length), frozenRowCount: 1 }
+      // Tambahkan 10 tab Celengan
+      sheetNames.forEach((name, idx) => {
+        reqs.push({
+          addSheet: {
+            properties: {
+              sheetId: 100 + idx,
+              title: name,
+              index: idx,
+              gridProperties: { rowCount: 1000, columnCount: Math.max(10, SHEETS[name].length), frozenRowCount: 1 }
+            }
           }
+        });
+      });
+      // Hapus tab default
+      reqs.push({ deleteSheet: { sheetId: defaultSheetId } });
+
+      // Format kolom teks agar tanggal, jam, ID, & no. rekening tidak diubah otomatis oleh Sheets
+      sheetNames.forEach((name, idx) => {
+        const cols = SHEETS[name];
+        (TEXT_COLS[name] || []).forEach((colName) => {
+          const ci = cols.indexOf(colName);
+          if (ci >= 0) {
+            reqs.push({
+              repeatCell: {
+                range: {
+                  sheetId: 100 + idx,
+                  startRowIndex: 0,
+                  endRowIndex: 1000,
+                  startColumnIndex: ci,
+                  endColumnIndex: ci + 1
+                },
+                cell: { userEnteredFormat: { numberFormat: { type: 'TEXT' } } },
+                fields: 'userEnteredFormat.numberFormat'
+              }
+            });
+          }
+        });
+      });
+
+      if (onProgress) onProgress('Menyiapkan struktur tabel & kategori…');
+
+      await gfetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`, {
+        method: 'POST',
+        body: {
+          requests: [
+            {
+              updateSpreadsheetProperties: {
+                properties: { title: SHEET_TITLE, timeZone: 'Asia/Jakarta' },
+                fields: 'title,timeZone'
+              }
+            },
+            ...reqs
+          ]
         }
       });
-    });
-    // Hapus tab default
-    reqs.push({ deleteSheet: { sheetId: defaultSheetId } });
 
-    // Format kolom teks agar tanggal, jam, ID, & no. rekening tidak diubah otomatis oleh Sheets
-    sheetNames.forEach((name, idx) => {
-      const cols = SHEETS[name];
-      (TEXT_COLS[name] || []).forEach((colName) => {
-        const ci = cols.indexOf(colName);
-        if (ci >= 0) {
-          reqs.push({
-            repeatCell: {
-              range: {
-                sheetId: 100 + idx,
-                startRowIndex: 0,
-                endRowIndex: 1000,
-                startColumnIndex: ci,
-                endColumnIndex: ci + 1
-              },
-              cell: { userEnteredFormat: { numberFormat: { type: 'TEXT' } } },
-              fields: 'userEnteredFormat.numberFormat'
-            }
-          });
-        }
+      // 3. Isi header tiap tab, PIN awal di Config, dan 10 kategori bawaan
+      const catRows = DEFAULT_CATS.map((c) => [newId_(), c[0], c[1], c[2]]);
+      const dataValues = sheetNames.map((name) => {
+        const rows = [SHEETS[name]];
+        if (name === 'Config') rows.push(['PIN', String(initialPin || '1234')]);
+        if (name === 'Kategori') rows.push(...catRows);
+        return {
+          range: `${name}!A1:${colLetter(SHEETS[name].length)}${rows.length}`,
+          values: rows
+        };
       });
-    });
 
-    if (onProgress) onProgress('Menyiapkan struktur tabel & kategori…');
+      await gfetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchUpdate`, {
+        method: 'POST',
+        body: { valueInputOption: 'RAW', data: dataValues }
+      });
 
-    await gfetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`, {
-      method: 'POST',
-      body: {
-        requests: [
-          {
-            updateSpreadsheetProperties: {
-              properties: { title: SHEET_TITLE, locale: 'id_ID', timeZone: 'Asia/Jakarta' },
-              fields: 'title,locale,timeZone'
-            }
-          },
-          ...reqs
-        ]
-      }
-    });
-
-    // 3. Isi header tiap tab, PIN awal di Config, dan 10 kategori bawaan
-    const catRows = DEFAULT_CATS.map((c) => [newId_(), c[0], c[1], c[2]]);
-    const dataValues = sheetNames.map((name) => {
-      const rows = [SHEETS[name]];
-      if (name === 'Config') rows.push(['PIN', String(initialPin || '1234')]);
-      if (name === 'Kategori') rows.push(...catRows);
-      return {
-        range: `${name}!A1:${colLetter(SHEETS[name].length)}${rows.length}`,
-        values: rows
-      };
-    });
-
-    await gfetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchUpdate`, {
-      method: 'POST',
-      body: { valueInputOption: 'RAW', data: dataValues }
-    });
-
-    return spreadsheetId;
+      return spreadsheetId;
+    } catch (err) {
+      // Hapus file setengah jadi jika gagal saat inisialisasi
+      try {
+        await gfetch(`https://www.googleapis.com/drive/v3/files/${spreadsheetId}`, {
+          method: 'PATCH',
+          body: { trashed: true }
+        });
+      } catch (_) {}
+      throw err;
+    }
   }
 
   /* ====================== SHEET READ / WRITE ENGINE ====================== */
@@ -392,12 +403,15 @@
           }
         }
       }));
+      if (missing.length === Object.keys(SHEETS).length && existing.Sheet1 !== undefined) {
+        addReqs.push({ deleteSheet: { sheetId: existing.Sheet1 } });
+      }
       const resAdd = await gfetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}:batchUpdate`, {
         method: 'POST',
         body: { requests: addReqs }
       });
       (resAdd.replies || []).forEach((rep, idx) => {
-        if (rep.addSheet) _sheetIds[missing[idx]] = rep.addSheet.properties.sheetId;
+        if (rep.addSheet && missing[idx]) _sheetIds[missing[idx]] = rep.addSheet.properties.sheetId;
       });
       await gfetch(`https://sheets.googleapis.com/v4/spreadsheets/${id}/values:batchUpdate`, {
         method: 'POST',
