@@ -302,11 +302,11 @@
         }
       });
 
-      // 3. Isi header tiap tab, PIN awal di Config, dan 10 kategori bawaan
+      // 3. Isi header tiap tab dan 10 kategori bawaan
       const catRows = DEFAULT_CATS.map((c) => [newId_(), c[0], c[1], c[2]]);
       const dataValues = sheetNames.map((name) => {
         const rows = [SHEETS[name]];
-        if (name === 'Config') rows.push(['PIN', String(initialPin || '1234')]);
+        if (name === 'Config') rows.push(['APP', 'Celengan']);
         if (name === 'Kategori') rows.push(...catRows);
         return {
           range: `${name}!A1:${colLetter(SHEETS[name].length)}${rows.length}`,
@@ -448,10 +448,6 @@
       });
     }
 
-    // Pastikan Config PIN ada
-    if (!_tables.Config.some((r) => r.key === 'PIN')) {
-      await put_('Config', { key: 'PIN', value: '1234' });
-    }
     // Pastikan Kategori default terisi jika kosong
     if (!_tables.Kategori.length) {
       const rows = DEFAULT_CATS.map((c) => ({ id: newId_(), nama: c[0], tipe: c[1], ikon: c[2] }));
@@ -548,35 +544,6 @@
 
   async function del_(name, id) {
     return delWhere_(name, (o) => String(o.id) === String(id));
-  }
-
-  /* ====================== AUTH PIN ====================== */
-
-  function pin_() {
-    const r = read_('Config').find((x) => x.key === 'PIN');
-    return r ? String(r.value).trim() : '';
-  }
-
-  function auth_(pin) {
-    const lockUntil = Number(LS.get('celengan_pin_lock', 0));
-    if (lockUntil && Date.now() < lockUntil) {
-      return 'Terlalu banyak percobaan. Coba lagi 5 menit lagi.';
-    }
-    const real = pin_();
-    if (!real) return 'PIN belum diatur di sheet Config.';
-    if (String(pin === undefined || pin === null ? '' : pin).trim() === real) {
-      LS.del('celengan_pin_fails');
-      LS.del('celengan_pin_lock');
-      return null;
-    }
-    const fails = Number(LS.get('celengan_pin_fails', 0)) + 1;
-    if (fails >= 5) {
-      LS.set('celengan_pin_lock', Date.now() + 300000);
-      LS.del('celengan_pin_fails');
-    } else {
-      LS.set('celengan_pin_fails', fails);
-    }
-    return 'PIN salah';
   }
 
   /* ====================== BUSINESS LOGIC (MIRROR Code.gs) ====================== */
@@ -879,12 +846,6 @@
       case 'getAll':
       case 'login':
         return null;
-      case 'setPin': {
-        const np = String(d.newPin || '').trim();
-        if (!/^\d{4,8}$/.test(np)) throw new Error('PIN harus 4 sampai 8 digit angka');
-        await put_('Config', { key: 'PIN', value: np });
-        return true;
-      }
       case 'addTrx':
         return addTrx_(d);
       case 'delTrx': {
@@ -997,10 +958,10 @@
     hasToken,
     getSheetUrl: () => (_user && _user.sheetId ? `https://docs.google.com/spreadsheets/d/${_user.sheetId}` : ''),
 
-    async signIn(onProgress) {
+    async signIn(onProgress, promptMode = 'select_account') {
       return serialized(async () => {
         if (onProgress) onProgress('Menghubungkan akun Google…');
-        await requestToken('select_account');
+        await requestToken(promptMode);
 
         if (onProgress) onProgress('Membaca profil Google…');
         const info = await fetchUserInfo();
@@ -1014,7 +975,7 @@
 
         if (!sheetId) {
           isNew = true;
-          sheetId = await createSpreadsheetForUser('1234', onProgress);
+          sheetId = await createSpreadsheetForUser('', onProgress);
         }
 
         _user = {
@@ -1052,30 +1013,20 @@
       _sheetIds = {};
       _loaded = false;
       LS.del('celengan_user');
-      try { sessionStorage.removeItem('pin'); } catch (e) {}
       if (tok && global.google && global.google.accounts && global.google.accounts.oauth2 && global.google.accounts.oauth2.revoke) {
         try { global.google.accounts.oauth2.revoke(tok, () => {}); } catch (e) {}
       }
     },
 
-    async call(a, d = {}, pin = '') {
+    async call(a, d = {}) {
       return serialized(async () => {
         await ensureToken(true);
         const forceRefresh = (a === 'login' || a === 'getAll');
         await loadAllTables(forceRefresh);
 
-        const bad = auth_(pin);
-        if (bad) {
-          const err = new Error(bad);
-          err.auth = true;
-          throw err;
-        }
-
         const r = await handle_(Object.assign({ a }, d));
-        if (a !== 'setPin') {
-          await runRutin_();
-          await snap_();
-        }
+        await runRutin_();
+        await snap_();
         return Object.assign(state_(), { r: r === undefined ? null : r });
       });
     }
