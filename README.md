@@ -1,119 +1,70 @@
 # Celengan (tankigoblin)
 
-Aplikasi catatan keuangan pribadi berbasis web (PWA), terkunci PIN.
-Tampilan di-host di **GitHub Pages**, data disimpan di **Google Sheet** lewat **Google Apps Script (GAS)**.
+Aplikasi catatan keuangan pribadi berbasis web (PWA) dengan **Login Google** dan penyimpanan otomatis di **Google Sheet milik masing-masing pengguna**.
 
-```
-HP / Browser (PWA di GitHub Pages)  --POST-->  Apps Script Web App (/exec)  -->  Google Sheet
+```text
+Browser / HP (PWA) --Google OAuth (drive.file)--> Google Drive & Sheets API --> Google Sheet di Drive User
 ```
 
-## Isi repo
+## Isi Repo
 
 | File | Fungsi |
 |---|---|
-| `index.html` | Aplikasi utama (UI + logika) |
-| `tema.css` | Gaya tampilan (kartu bertepi tebal) dan warna tema |
-| `dompet.js` | Menu Dompet berbentuk kartu bertumpuk |
-| `sw.js` | Service worker (cache agar bisa dibuka cepat/offline) |
-| `manifest.json`, `icon-192.png`, `icon-512.png` | Agar bisa dipasang seperti aplikasi |
+| `index.html` | Aplikasi utama (UI, layar Login Google, layar PIN, & logika fitur) |
+| `sheets-api.js` | Engine Google OAuth, auto-create Google Sheet 10 tab di Drive user, & adapter baca/tulis |
+| `tema.css` | Gaya tampilan (Neobrutalism, Minimalis, Kaca) dan 10 tema warna |
+| `dompet.js` | Menu Dompet berbentuk kartu bertumpuk + opsi Gaya tampilan |
+| `sw.js` | Service worker (cache aset statis untuk PWA) |
+| `manifest.json`, `icon-192.png`, `icon-512.png` | Konfigurasi PWA |
 
-`Code.gs` (backend) berjalan di Apps Script, bukan di GitHub Pages. Simpan salinannya di komputer.
+---
 
-## Prasyarat
+## Cara Setup (Untuk Developer / Penjual, 1x Saja)
 
-- Akun Google dan akun GitHub
-- Git di komputer (atau pakai upload lewat web GitHub, lihat langkah 3)
+User/pembeli tidak perlu membuat Sheet atau deploy Apps Script lagi. Anda cukup menyiapkan **Google Cloud OAuth Client ID** sekali saja:
 
-## 1. Siapkan Google Sheet dan Apps Script
+### 1. Buat Project di Google Cloud Console
+1. Buka [console.cloud.google.com](https://console.cloud.google.com/) dan buat project baru (mis. **Celengan**).
+2. Menu **APIs & Services → Library**, aktifkan dua API ini:
+   - **Google Drive API**
+   - **Google Sheets API**
+3. Menu **APIs & Services → OAuth consent screen**:
+   - Pilih **External** → isi App name (`Celengan`), User support email, dan Developer contact.
+   - Pada bagian **Scopes**, tambahkan:
+     - `https://www.googleapis.com/auth/drive.file`
+     - `openid`, `email`, `profile`
+   - *(Saat masih mode Testing, tambahkan email akun Google Anda di **Test users** untuk uji coba. Sebelum dijual ke publik/lebih dari 100 user, ajukan verifikasi ke **Production**).*
+4. Menu **APIs & Services → Credentials → Create Credentials → OAuth client ID**:
+   - Application type: **Web application**
+   - **Authorized JavaScript origins**: masukkan URL tempat aplikasi di-host, misalnya:
+     - `https://rf-dev11.github.io` (untuk GitHub Pages)
+     - `http://localhost:8080` atau `http://127.0.0.1:8080` (untuk testing lokal)
+   - Salin **Client ID** (`xxxx.apps.googleusercontent.com`).
 
-1. Buka [sheets.google.com](https://sheets.google.com), buat spreadsheet baru, misalnya bernama **Celengan**.
-2. Menu **Extensions → Apps Script**.
-3. Hapus kode bawaan, lalu tempel seluruh isi `Code.gs`.
-4. Atur **PIN** di `Code.gs` (cari bagian PIN di atas file). Jangan commit `Code.gs` berisi PIN ke repo publik.
-5. Pilih fungsi setup di `Code.gs` (jika ada), klik **Run**, lalu izinkan akses.
-   Jika muncul "Google hasn't verified this app": **Advanced → Go to (nama project) → Allow**. Ini normal untuk script milik sendiri.
-6. Jika `Code.gs` memakai trigger harian (transaksi otomatis dan riwayat nilai bersih), buat lewat ikon jam **Triggers → Add Trigger**, pilih fungsi hariannya, **Time-driven → Day timer**.
-7. Klik **Deploy → New deployment**, ikon roda gigi → **Web app**:
-   - Execute as: **Me**
-   - Who has access: **Anyone**
-8. Klik **Deploy**, lalu salin URL yang berakhiran **`/exec`**.
-
-## 2. Sambungkan aplikasi ke Apps Script
-
-Di `index.html`, ganti URL pada baris ini dengan URL `/exec` milikmu:
+### 2. Pasang Client ID ke Aplikasi
+Buka `sheets-api.js` dan ganti baris berikut:
 
 ```js
-const API='https://script.google.com/macros/s/XXXXXXXX/exec';
+const DEFAULT_CLIENT_ID = 'GANTI_DENGAN_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
 ```
 
-Pakai URL `/exec`, bukan `/dev`.
+*(Saat testing pertama kali, Anda juga bisa langsung menempelkan Client ID lewat form pengaturan developer di halaman login.)*
 
-## 3. Push ke GitHub
+### 3. Deploy ke GitHub Pages / Hosting
+Push perubahan ke GitHub (`main`), lalu aktifkan **Settings → Pages** seperti biasa.
 
-**Lewat Git:**
+---
 
-```bash
-git init
-git add .
-git commit -m "Celengan pertama"
-git branch -M main
-git remote add origin https://github.com/rf-dev11/tankigoblin.git
-git push -u origin main
-```
+## Alur untuk Pembeli / User
+1. Buka aplikasi → klik **Masuk dengan Google** → pilih akun Gmail → klik **Izinkan**.
+2. Aplikasi otomatis mengecek Drive user:
+   - **User baru:** otomatis dibuatkan Spreadsheet **Celengan - Catatan Keuangan** berisi 10 tab (`Config`, `Dompet`, `Kategori`, `Transaksi`, `Anggaran`, `Aset`, `Utang`, `Rutin`, `Target`, `Riwayat`) + kategori awal, lalu diminta membuat PIN 4–8 angka.
+   - **User lama (pindah HP/browser):** aplikasi langsung menemukan Spreadsheet miliknya di Drive dan meminta PIN.
+3. User dapat mengubah PIN kapan saja lewat **Akun → Pengaturan → Ubah PIN**, dan membuka Sheet miliknya lewat **Akun → Pengaturan → Google Sheet saya**.
 
-GitHub tidak menerima password akun saat push. Pakai Personal Access Token, `gh auth login`, atau GitHub Desktop.
+---
 
-**Tanpa Git:** buka repo di github.com, **Add file → Upload files**, seret semua file, lalu **Commit changes**.
-
-## 4. Aktifkan GitHub Pages
-
-1. Di repo: **Settings → Pages**.
-2. **Source:** Deploy from a branch.
-3. **Branch:** `main`, folder `/ (root)`, klik **Save**.
-4. Tunggu 1 sampai 2 menit. Alamatnya:
-
-```
-https://rf-dev11.github.io/tankigoblin/
-```
-
-## 5. Pasang menu Dompet
-
-1. Pastikan `tema.css` dan `dompet.js` ada di repo, satu folder dengan `index.html`.
-2. Di `index.html`, tambahkan satu baris sebelum `</body>`, setelah `</script>` terakhir:
-
-```html
-<script src="dompet.js"></script>
-```
-
-3. Di `sw.js`, naikkan versi/nama cache (misalnya `v1` menjadi `v2`) dan tambahkan `dompet.js` ke daftar file yang di-cache jika ada daftarnya.
-
-Urutan dan warna kartu Dompet tersimpan di perangkat tempat kamu mengaturnya (localStorage), tidak ikut ke Sheet.
-
-## 6. Pasang di HP
-
-- **Android (Chrome):** menu ⋮ → **Install app** atau **Add to Home screen**.
-- **iPhone (Safari):** tombol Share → **Add to Home Screen**.
-
-Jika memakai subfolder Pages, pastikan `start_url` dan `scope` di `manifest.json` relatif (`./`) atau diawali `/tankigoblin/`.
-
-## 7. Cara update
-
-- **Ubah tampilan atau logika:** edit file, `git add . && git commit -m "update" && git push`, lalu naikkan versi cache di `sw.js`.
-- **Ubah `Code.gs`:** tempel kode baru, lalu **Deploy → Manage deployments → ikon pensil → Version: New version → Deploy**. URL `/exec` tetap sama.
-
-## Masalah umum
-
-| Gejala | Penyebab dan solusi |
-|---|---|
-| "Gagal memuat data" | URL `API` salah, atau akses Web App bukan **Anyone**. Deploy ulang dan cek URL `/exec`. |
-| "Code.gs … masih versi lama" | Deploy **New version** setelah menempel `Code.gs` terbaru. |
-| Tampilan tidak berubah setelah push | Cache service worker. Naikkan versi cache di `sw.js`, lalu tutup dan buka lagi aplikasinya (atau hapus data situs). |
-| Pages menampilkan 404 | Cek nama file `index.html` (huruf kecil) dan pengaturan Pages (`main`, root). Tunggu beberapa menit. |
-| PIN selalu salah | Cek PIN di `Code.gs`. Setelah mengubahnya, deploy New version. |
-| Menu Dompet tidak muncul | Tag `<script src="dompet.js">` belum ditambahkan, atau berada sebelum script utama. |
-
-## Keamanan
-
-- Aplikasi hanya dilindungi PIN. Pakai PIN yang tidak mudah ditebak.
-- Repo publik menampilkan URL Web App. Jangan menaruh PIN atau data pribadi di repo.
-- Salin spreadsheet secara berkala sebagai cadangan (**File → Make a copy**).
+## Catatan Rilis ke Google Play Store (`.aab` / `.apk`)
+- **Format Play Store:** Google Play mewajibkan format **`.aab` (Android App Bundle)** untuk upload aplikasi baru (`.apk` hanya untuk install manual/testing).
+- **Penting soal Login Google:** Google memblokir OAuth Login di dalam WebView Android biasa (`disallowed_useragent`).
+- **Solusi termudah:** Bungkus PWA ini menjadi **TWA (Trusted Web Activity)** menggunakan [PWABuilder](https://www.pwabuilder.com/) atau `bubblewrap` setelah di-host di domain HTTPS. TWA menjalankan aplikasi melalui Chrome Android sehingga **Login Google + Auto-Create Sheet** tetap bekerja normal tanpa error WebView.

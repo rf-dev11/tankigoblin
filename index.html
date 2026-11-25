@@ -171,6 +171,8 @@ nav:not([hidden]){animation:navin .45s var(--ease)}
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="tema.css">
 <script>try{document.documentElement.dataset.tema=localStorage.getItem('tema')||'hijau'}catch(e){}</script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="sheets-api.js"></script>
 </head>
 <body>
 <div id="ap" class="w"></div>
@@ -181,8 +183,6 @@ nav:not([hidden]){animation:navin .45s var(--ease)}
 <div class="ts" id="ts" role="status" aria-live="polite"></div>
 
 <script>
-// URL Web App Apps Script (berakhiran /exec). Ganti jika Anda deploy ulang dengan URL baru.
-const API='https://script.google.com/macros/s/AKfycbxnOw6euHniwsHgmVib1JwwpNLsn_iG1MLH-W50edJwRd_hFfbE9b5_odNQ99w45LxQ/exec';
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -241,12 +241,12 @@ function applyTrx(t,s){   // sama dengan Code.gs: dipakai untuk update lokal ins
 }
 const total=()=>bTot();   // total saldo = dompet saja; aset (investasi) hanya masuk nilai bersih
 
-/* ---------- API & kunci PIN ---------- */
+/* ---------- API, Login Google & kunci PIN ---------- */
+let lkMode='pin'; // 'google' | 'pin' | 'newpin'
+const GOOGLE_SVG='<svg width="20" height="20" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3.1.6 4.2 1.6l3.1-3.1C17.4 1.7 14.9 1 12 1 7.4 1 3.5 3.6 1.6 7.4l3.7 2.8C6.2 7.2 8.9 5 12 5z"/><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.6l3.7 2.9c2.2-2 3.7-5 3.7-8.7z"/><path fill="#FBBC05" d="M5.3 14.8c-.2-.8-.4-1.6-.4-2.5s.2-1.7.4-2.5L1.6 7C.6 9 0 11.2 0 13.5s.6 4.5 1.6 6.5l3.7-2.9v-2.3z"/><path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3.1 0-5.8-2.1-6.7-5l-3.7 2.9C3.5 21.4 7.4 24 12 24z"/></svg>';
+
 async function api(a,d={},keep){
-  const r=await fetch(API,{method:'POST',body:JSON.stringify({a,pin:PIN,...d})});
-  const j=await r.json();
-  if(j.err){const e=Error(j.err);e.auth=!!j.auth;throw e}
-  if(!Array.isArray(j.rutin))throw Error('Code.gs di Apps Script masih versi lama. Tempel Code.gs terbaru, lalu Deploy, Manage deployments, Edit, New version');
+  const j=await SheetsAPI.call(a,d,PIN);
   if(PIN&&!(keep&&Q.length))S={...EMPTY,...j};return j.r;
 }
 function fail(e){if(e.auth)lock(e.message);else alert(e.message)}
@@ -268,6 +268,11 @@ async function pump(){
     const j=Q.shift();
     try{await api(j.a,j.d,true);if(!qf)Q.length?toast(SP+'Menyimpan…',''):toast('✓ Tersimpan','ok',2200)}
     catch(e){
+      if(e.oauth){
+        Q.unshift(j);qb=false;qf=true;
+        toast('⚠ Sesi Google habis. <button class="x" style="padding:2px 6px;color:var(--p)" onclick="reconnectGoogle()">Sambung ulang</button>','bad',0);
+        return;
+      }
       if(e.auth){Q=[];qb=false;qf=false;$('#ts').classList.remove('on');return lock(e.message)}
       qf=true;toast('✕ Gagal menyimpan: '+esc(e.message),'bad',6000);
     }
@@ -276,6 +281,10 @@ async function pump(){
   if(qf){qf=false;try{await api('getAll')}catch(e){}}   // gagal: ambil ulang data asli dari Sheet
   draw();
 }
+async function reconnectGoogle(){
+  try{toast(SP+'Menyambung ulang…','');await SheetsAPI.reconnect();qf=false;pump();}
+  catch(e){toast('✕ '+esc(e.message),'bad',4000)}
+}
 addEventListener('beforeunload',e=>{if(Q.length||qb){e.preventDefault();e.returnValue=''}});
 function delTrx(id){
   if(!confirm('Hapus transaksi ini? Saldo akan dikembalikan.'))return;
@@ -283,32 +292,96 @@ function delTrx(id){
 }
 
 async function init(){
-  if(!PIN)return lockUI();
- $('#ap').innerHTML='<div class="ld"><b>Memuat data…</b><iframe src="https://giphy.com/embed/4E4KqxulO9JtRF8s6T" frameborder="0" allowfullscreen></iframe><a href="https://giphy.com/gifs/cat-loading-mimibarbar-4E4KqxulO9JtRF8s6T" target="_blank" rel="noopener">via GIPHY</a></div>';
+  if(!SheetsAPI.hasUser())return googleLoginUI();
+  if(!PIN||!SheetsAPI.hasToken())return lockUI(PIN&&!SheetsAPI.hasToken()?'Masukkan PIN untuk menyambung ulang Google':'',false);
+  $('#ap').innerHTML='<div class="ld"><b>Memuat data dari Google Drive…</b></div>';
   try{await api('getAll');draw('x')}
   catch(e){
     if(e.auth)return lock(e.message);
-    $('#ap').innerHTML=`<div class="card"><b class="out">Gagal memuat data</b><p class="mt">${esc(e.message)}. Pastikan URL API di index.html benar dan Web App di-deploy dengan akses Anyone.</p>
+    $('#ap').innerHTML=`<div class="card"><b class="out">Gagal memuat data</b><p class="mt">${esc(e.message)}</p>
       <button class="sv" style="margin-top:8px" onclick="init()">Coba lagi</button></div>`;
   }
 }
+function googleLoginUI(msg='',status=''){
+  lkMode='google';$('#lk').hidden=false;
+  const okCfg=SheetsAPI.isClientConfigured();
+  $('#lk').innerHTML=`<div class="lkb"><div class="lg">💸💰</div><h1>Celengan</h1>
+    <p class="mt" style="margin:0 0 18px">Catatan keuangan pribadi. Data otomatis disimpan di Google Sheet milik Anda sendiri.</p>
+    ${okCfg?'':`<div class="gcfg"><b style="font-size:13px">Pengaturan Developer (Sekali saja)</b>
+      <p class="mt" style="font-size:12px;margin:4px 0">Tempel Google OAuth Client ID Anda, atau isi di file <code>sheets-api.js</code>.</p>
+      <input id="gcid" placeholder="xxxx.apps.googleusercontent.com" value="${esc(SheetsAPI.getClientId().startsWith('GANTI_')?'':SheetsAPI.getClientId())}">
+      <button class="sv" style="margin-top:4px;padding:10px;min-height:40px" onclick="saveClientIdUI()">Simpan Client ID</button></div>`}
+    <button class="gbtn" onclick="startGoogleLogin()" ${busy||!okCfg?'disabled':''}>${busy?SP+'<span>'+esc(status||'Menghubungkan…')+'</span>':GOOGLE_SVG+'<span>Masuk dengan Google</span>'}</button>
+    <p class="${msg?'out':'mt'}" style="min-height:22px;margin:12px 0 0;font-size:13px">${esc(msg||(okCfg?'Baru pertama kali? Sheet akan dibuat otomatis di Drive Anda.':''))}</p></div>`;
+}
+function saveClientIdUI(){
+  const v=($('#gcid').value||'').trim();
+  if(!v||!v.includes('.apps.googleusercontent.com'))return alert('Masukkan Google Client ID yang valid (*.apps.googleusercontent.com)');
+  SheetsAPI.setClientId(v);googleLoginUI();
+}
+async function startGoogleLogin(){
+  if(busy)return;busy=true;googleLoginUI('','Membuka login Google…');
+  try{
+    const res=await SheetsAPI.signIn(s=>googleLoginUI('',s));
+    busy=false;pb='';
+    if(res.isNew){createPinUI('Sheet baru berhasil dibuat di Google Drive Anda! Buat PIN (4–8 angka) untuk mengunci aplikasi.');}
+    else{lockUI('Spreadsheet ditemukan! Masukkan PIN Anda.',false);}
+  }catch(e){
+    busy=false;googleLoginUI(e.message||'Gagal masuk dengan Google');
+  }
+}
+function switchGoogleAccount(){
+  if(!confirm('Ganti akun Google?'))return;
+  SheetsAPI.signOut();lock();
+}
 function lock(msg=''){
   Q=[];PIN='';pb='';try{sessionStorage.removeItem('pin')}catch(e){}
-  S={...EMPTY};closeM();$('#ap').innerHTML='';$('#nv').hidden=true;$('#fab').classList.add('h');lockUI(msg);
+  S={...EMPTY};closeM();$('#ap').innerHTML='';$('#nv').hidden=true;$('#fab').classList.add('h');
+  if(!SheetsAPI.hasUser())return googleLoginUI(msg);
+  lockUI(msg);
 }
 function lockUI(msg='',bad=true){
-  $('#lk').hidden=false;
+  lkMode='pin';$('#lk').hidden=false;
+  const u=SheetsAPI.getUser()||{};
   const keys=[1,2,3,4,5,6,7,8,9,'<',0,'ok'];
-  $('#lk').innerHTML=`<div class="lkb"><div class="lg">💸💰</div><h1>Celengan</h1><p class="mt" style="margin:0">Masukkan PIN</p>
+  $('#lk').innerHTML=`<div class="lkb"><div class="lg">💸💰</div><h1>Celengan</h1>
+    ${u.email?`<div class="upill">${esc(u.email)}</div>`:''}
+    <p class="mt" style="margin:6px 0 0">Masukkan PIN</p>
     <div class="dots ${msg&&bad?'sh':''}">${[...Array(Math.max(4,pb.length))].map((_,i)=>`<i class="${i<pb.length?'f':''} ${i==pb.length-1?'n':''}"></i>`).join('')}</div>
     <p class="${bad?'out':'mt'}" style="min-height:22px;margin:6px 0">${esc(msg)}</p>
-    <div class="kp">${keys.map(k=>`<button class="${k=='ok'?'ok':''}" onclick="kp('${k}')" aria-label="${k=='<'?'Hapus':k=='ok'?'Masuk':k}">${k=='<'?'⌫':k=='ok'?'✓':k}</button>`).join('')}</div></div>`;
+    <div class="kp">${keys.map(k=>`<button class="${k=='ok'?'ok':''}" onclick="kp('${k}')" aria-label="${k=='<'?'Hapus':k=='ok'?'Masuk':k}">${k=='<'?'⌫':k=='ok'?'✓':k}</button>`).join('')}</div>
+    <button class="lksub" onclick="switchGoogleAccount()">Ganti akun Google</button></div>`;
+}
+function createPinUI(msg='',bad=false){
+  lkMode='newpin';$('#lk').hidden=false;
+  const keys=[1,2,3,4,5,6,7,8,9,'<',0,'ok'];
+  $('#lk').innerHTML=`<div class="lkb"><div class="lg">🔐</div><h1>Buat PIN Baru</h1>
+    <p class="mt" style="margin:0">Minimal 4 angka (untuk buka aplikasi)</p>
+    <div class="dots ${msg&&bad?'sh':''}">${[...Array(Math.max(4,pb.length))].map((_,i)=>`<i class="${i<pb.length?'f':''} ${i==pb.length-1?'n':''}"></i>`).join('')}</div>
+    <p class="${bad?'out':'in'}" style="min-height:22px;margin:6px 0;font-size:13px">${esc(msg)}</p>
+    <div class="kp">${keys.map(k=>`<button class="${k=='ok'?'ok':''}" onclick="kp('${k}')" aria-label="${k=='<'?'Hapus':k=='ok'?'Simpan':k}">${k=='<'?'⌫':k=='ok'?'✓':k}</button>`).join('')}</div>
+    <button class="lksub" onclick="useDefaultPin()">Lewati (pakai PIN 1234)</button></div>`;
+}
+async function useDefaultPin(){
+  if(busy)return;pb='1234';await submitNewPin();
 }
 function kp(k){
   if(busy)return;
-  if(k=='ok')return submitPin();
+  if(k=='ok')return lkMode==='newpin'?submitNewPin():submitPin();
   if(k=='<')pb=pb.slice(0,-1);else if(pb.length<8)pb+=k;
-  lockUI();
+  lkMode==='newpin'?createPinUI():lockUI();
+}
+async function submitNewPin(){
+  if(busy)return;
+  if(pb.length<4)return createPinUI('PIN minimal 4 angka',true);
+  busy=true;const np=pb;createPinUI('Menyimpan PIN…',false);
+  try{
+    PIN='1234';
+    await api('setPin',{newPin:np});
+    PIN=np;try{sessionStorage.setItem('pin',PIN)}catch(e){}
+    pb='';$('#lk').hidden=true;draw('x');toast('✓ Akun & Sheet siap digunakan!','ok',3000);
+  }catch(e){PIN='';createPinUI(e.message,true);}
+  busy=false;
 }
 async function submitPin(){
   if(!pb||busy)return;
@@ -318,7 +391,8 @@ async function submitPin(){
   busy=false;
 }
 addEventListener('keydown',e=>{
-  if($('#lk').hidden)return;
+  if($('#lk').hidden||(lkMode!=='pin'&&lkMode!=='newpin'))return;
+  if(document.activeElement&&document.activeElement.tagName==='INPUT')return;
   if(/^\d$/.test(e.key))kp(e.key);else if(e.key=='Backspace')kp('<');else if(e.key=='Enter')kp('ok');
 });
 document.addEventListener('visibilitychange',()=>{ // kunci otomatis setelah 3 menit di latar belakang
@@ -442,11 +516,16 @@ const V={
     const T={dompet:'Dompet',kat:'Kategori',rutin:'Transaksi otomatis',tema:'Tema warna'};
     if(pg)return `<div class="nb"><button class="bk" onclick="back()">‹ Pengaturan</button></div><h1>${T[pg]}</h1>`+V[pg]();
     const rw=([k,i,c,l,d])=>`<div class="row2" onclick="push('${k}')"><div class="ic" style="background:${c}33">${i}</div><span class="g">${l}</span><span class="mt">${d}</span><span class="chev">›</span></div>`;
+    const u=SheetsAPI.getUser()||{};
     return `<p class="gl" style="margin-top:4px">Data</p><div class="grp">${[
       ['dompet','👛','#3b82f6','Dompet',S.banks.length+' dompet'],
       ['kat','🏷️','#a855f7','Kategori',S.cats.length+' kategori'],
-      ['rutin','🔁','#0bc78d','Transaksi otomatis',S.rutin.filter(r=>r.aktif).length+' aktif']].map(rw).join('')}</div>
-      <p class="gl">Tampilan</p><div class="grp">${rw(['tema','🎨','#ffd60a','Tema warna',TEMA[tema][0]])}</div><p class="gl">Keamanan</p><div class="grp"><div class="row2" onclick="lock()"><div class="ic" style="background:#ef5b5b33">🔒</div><span class="g">Kunci aplikasi sekarang</span><span class="chev">›</span></div></div>
+      ['rutin','🔁','#0bc78d','Transaksi otomatis',S.rutin.filter(r=>r.aktif).length+' aktif']].map(rw).join('')}
+      <div class="row2" onclick="openSheet()"><div class="ic" style="background:#22c55e33">📊</div><span class="g">Google Sheet saya</span><span class="mt">Buka</span><span class="chev">›</span></div></div>
+      <p class="gl">Tampilan</p><div class="grp">${rw(['tema','🎨','#ffd60a','Tema warna',TEMA[tema][0]])}</div><p class="gl">Keamanan</p><div class="grp">
+      <div class="row2" onclick="pinForm()"><div class="ic" style="background:#3b82f633">🔑</div><span class="g">Ubah PIN</span><span class="chev">›</span></div>
+      <div class="row2" onclick="lock()"><div class="ic" style="background:#ef5b5b33">🔒</div><span class="g">Kunci aplikasi sekarang</span><span class="chev">›</span></div>
+      <div class="row2" onclick="logoutGoogle()"><div class="ic" style="background:#f59e0b33">🚪</div><div class="g"><b>Keluar akun Google</b><small class="mt" style="display:block">${esc(u.email||'')}</small></div><span class="chev">›</span></div></div>
       <p class="mt" style="font-size:12px;margin:10px 4px"></p>`;
   },
   target(){
@@ -715,6 +794,32 @@ function saveTarget(id,btn){
   const d={id,nama:$('#tn').value.trim(),jumlah:Number($('#tj').value),sumber:$('#tsrc').value,tenggat:$('#td').value};
   if(!d.nama||!(d.jumlah>0))return alert('Isi nama dan target lebih dari 0');
   run('saveTarget',d,btn);
+}
+
+function openSheet(){
+  const u=SheetsAPI.getSheetUrl();
+  if(u)window.open(u,'_blank','noopener');
+}
+function pinForm(){
+  modal('Ubah PIN',`<div class="fr"><span>PIN baru</span><input id="pn1" type="password" inputmode="numeric" maxlength="8" placeholder="4–8 angka"></div>
+    <div class="fr"><span>Ulangi PIN</span><input id="pn2" type="password" inputmode="numeric" maxlength="8" placeholder="Ketik ulang"></div>
+    <p class="mt" style="font-size:12px">PIN disimpan di tab Config pada Google Sheet Anda.</p>
+    <button class="sv" onclick="savePinForm(this)">Simpan PIN</button>`);
+}
+async function savePinForm(btn){
+  const p1=($('#pn1').value||'').trim(),p2=($('#pn2').value||'').trim();
+  if(!/^\d{4,8}$/.test(p1))return alert('PIN harus 4 sampai 8 digit angka');
+  if(p1!==p2)return alert('Konfirmasi PIN tidak cocok');
+  btn.disabled=true;
+  try{
+    await api('setPin',{newPin:p1});
+    PIN=p1;try{sessionStorage.setItem('pin',PIN)}catch(e){}
+    closeM();toast('✓ PIN diperbarui','ok',2400);
+  }catch(e){btn.disabled=false;fail(e)}
+}
+function logoutGoogle(){
+  if(!confirm('Keluar dari akun Google ini? Data tetap aman tersimpan di Google Drive Anda.'))return;
+  SheetsAPI.signOut();lock();
 }
 
 let tx=0,ty=0;

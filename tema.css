@@ -107,3 +107,11 @@ nav .on{background:var(--y);color:var(--ink);border-color:var(--ink);font-weight
 .wi{transition:margin-top .5s var(--ease)}
 .wax{display:grid;grid-template-rows:0fr;opacity:0;visibility:hidden;transition:grid-template-rows .5s var(--ease),opacity .35s,visibility 0s .5s}
 .wi.sel .wax{grid-template-rows:1fr;opacity:1;visibility:visible;transition-delay:0s}
+/* login Google & profil */
+.gbtn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:var(--ink);border:var(--bd);border-radius:16px;padding:14px 16px;font:inherit;font-size:16px;font-weight:700;box-shadow:var(--sh);min-height:52px;cursor:pointer}
+.gbtn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+.gbtn:disabled{opacity:.6;cursor:wait}
+.upill{display:inline-flex;align-items:center;gap:8px;background:#fff;color:var(--ink);border:2px solid var(--ink);border-radius:99px;padding:4px 12px;font-size:12px;font-weight:600;margin:8px 0 2px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gcfg{text-align:left;background:#fff;border:var(--bd);border-radius:18px;padding:14px;margin:14px 0;box-shadow:3px 3px 0 var(--ink)}
+.gcfg input{width:100%;margin:8px 0;background:var(--bg);color:var(--ink);border:2px solid var(--ink);border-radius:10px;padding:9px 10px;font:inherit;font-size:13px}
+.lksub{background:none;border:0;color:var(--p);font:inherit;font-size:13px;font-weight:700;padding:6px 10px;margin-top:8px;cursor:pointer}
