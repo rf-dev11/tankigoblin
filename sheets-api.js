@@ -13,7 +13,7 @@
   const DEFAULT_CLIENT_ID = '998367672026-41821kqb669flr7g4kvqig10o461he4p.apps.googleusercontent.com';
   // Isi LICENSE_API dengan URL Web App (/exec) dari license-apps-script.gs atau Cloudflare Worker.
   // Biarkan '' jika ingin mode bebas tanpa pengecekan lisensi.
-  const LICENSE_API = 'https://script.google.com/macros/s/AKfycbwHEmcDMvQ0aO9HrEu94PdPSP08bjlGZOybPIzfTD0SJcit30EbtZoaAIBUhB_6og/exec';
+  const LICENSE_API = 'https://script.google.com/macros/s/AKfycbwo9lzehQN6ZQpVo-IyRKuoY0roBZGDipLhCzzuIp1_UE1rPhmCHXC4c1XFqqP7RDKO/exec';
   const LYNK_URL = 'https://lynk.id/softwareberkah/6zvy3l3poplw/checkout';
   const SCOPES = 'https://www.googleapis.com/auth/drive.file openid email profile';
   const DRIVE_APP_KEY = 'celenganApp';
