@@ -245,7 +245,8 @@ const GOOGLE_SVG='<svg width="20" height="20" viewBox="0 0 24 24"><path fill="#E
 
 async function api(a,d={},keep){
   const j=await SheetsAPI.call(a,d);
-  if(!(keep&&Q.length))S={...EMPTY,...j};return j.r;
+  if(!(keep&&Q.length)){S={...EMPTY,...j};SheetsAPI.saveCachedData(S)}
+  return j.r;
 }
 function fail(e){if(e.auth||e.oauth)lock(e.message);else alert(e.message)}
 
@@ -280,8 +281,17 @@ async function pump(){
   draw();
 }
 async function reconnectGoogle(){
-  try{toast(SP+'Menyambung ulang…','');await SheetsAPI.reconnect();qf=false;pump();}
-  catch(e){toast('✕ '+esc(e.message),'bad',4000)}
+  try{
+    toast(SP+'Menyambung ulang…','');
+    await SheetsAPI.reconnect();
+    await SheetsAPI.verifySessionLicense();
+    qf=false;
+    if(Q.length){await pump();}
+    else{await api('getAll');draw();toast('✓ Tersinkron dengan Google Drive','ok',2200);}
+  }catch(e){
+    if(e.needLicense)return licenseUI('');
+    toast('✕ '+esc(e.message),'bad',4000);
+  }
 }
 addEventListener('beforeunload',e=>{if(Q.length||qb){e.preventDefault();e.returnValue=''}});
 function delTrx(id){
@@ -290,15 +300,28 @@ function delTrx(id){
 }
 
 async function init(){
-  if(!SheetsAPI.hasUser()||!SheetsAPI.hasToken())return googleLoginUI();
-  $('#ap').innerHTML='<div class="ld"><b>Memuat data dari Google Drive…</b></div>';
+  if(!SheetsAPI.hasUser())return googleLoginUI();
+  const cached=SheetsAPI.getCachedData();
+  if(!SheetsAPI.hasToken()){
+    if(cached&&SheetsAPI.hasVerifiedLicense()){
+      S={...EMPTY,...cached};draw('x');
+      toast('⚠ Sesi Google habis. <button class="x" style="padding:2px 6px;color:var(--p)" onclick="reconnectGoogle()">Sambung ulang</button>','bad',0);
+      return;
+    }
+    return googleLoginUI();
+  }
+  if(cached&&SheetsAPI.hasVerifiedLicense()){S={...EMPTY,...cached};draw('x');}
+  else{$('#ap').innerHTML='<div class="ld"><b>Memuat data dari Google Drive…</b></div>';}
   try{
     await SheetsAPI.verifySessionLicense();
-    await api('getAll');draw('x');
+    await api('getAll');draw(cached?'':'x');
   }catch(e){
     if(e.needLicense)return licenseUI('');
-    if(e.auth||e.oauth)return lock(e.message);
-    $('#ap').innerHTML=`<div class="card"><b class="out">Gagal memuat data</b><p class="mt">${esc(e.message)}</p>
+    if(e.auth||e.oauth){
+      if(cached){toast('⚠ Sesi Google habis. <button class="x" style="padding:2px 6px;color:var(--p)" onclick="reconnectGoogle()">Sambung ulang</button>','bad',0);return;}
+      return lock(e.message);
+    }
+    if(!cached)$('#ap').innerHTML=`<div class="card"><b class="out">Gagal memuat data</b><p class="mt">${esc(e.message)}</p>
       <button class="sv" style="margin-top:8px" onclick="init()">Coba lagi</button></div>`;
   }
 }

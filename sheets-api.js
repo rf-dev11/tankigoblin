@@ -76,9 +76,9 @@
   let _loaded = false;
   let _mutex = Promise.resolve();
 
-  // Muat token sesi sementara jika belum expired
+  // Muat token Google dari localStorage jika masih berlaku (~1 jam)
   try {
-    const st = JSON.parse(sessionStorage.getItem('celengan_gtok') || 'null');
+    const st = LS.get('celengan_gtok', null);
     if (st && st.token && st.exp > Date.now() + 30000) {
       _token = st.token;
       _tokenExp = st.exp;
@@ -88,10 +88,8 @@
   function saveToken(tok, expiresInSec) {
     _token = tok || '';
     _tokenExp = tok ? Date.now() + Math.max(60, (Number(expiresInSec) || 3600) - 60) * 1000 : 0;
-    try {
-      if (_token) sessionStorage.setItem('celengan_gtok', JSON.stringify({ token: _token, exp: _tokenExp }));
-      else sessionStorage.removeItem('celengan_gtok');
-    } catch (e) {}
+    if (_token) LS.set('celengan_gtok', { token: _token, exp: _tokenExp });
+    else LS.del('celengan_gtok');
   }
 
   function getClientId() {
@@ -953,13 +951,16 @@
     return !!String(LICENSE_API || '').trim();
   }
 
+  const LICENSE_CACHE_MS = 7 * 24 * 60 * 60 * 1000; // cek ulang lisensi ke server tiap 7 hari
+
   function isSessionLicenseVerified(email) {
     if (!isLicenseEnabled()) return true;
-    try { return sessionStorage.getItem('celengan_lic_ok') === String(email || '').toLowerCase(); } catch (e) { return false; }
+    const rec = LS.get('celengan_lic_ok', null);
+    return !!(rec && rec.email === String(email || '').toLowerCase() && rec.ts && (Date.now() - rec.ts < LICENSE_CACHE_MS));
   }
 
   function markSessionLicenseVerified(email) {
-    try { sessionStorage.setItem('celengan_lic_ok', String(email || '').toLowerCase()); } catch (e) {}
+    LS.set('celengan_lic_ok', { email: String(email || '').toLowerCase(), ts: Date.now() });
   }
 
   async function callLicenseServer(payload) {
@@ -1022,6 +1023,9 @@
     hasUser: () => !!(_user && _user.email && _user.sheetId),
     getUser: () => _user,
     hasToken,
+    hasVerifiedLicense: () => !!(_user && _user.email && isSessionLicenseVerified(_user.email)),
+    getCachedData: () => (_user && _user.email ? LS.get('celengan_data_' + _user.email, null) : null),
+    saveCachedData: (data) => { if (_user && _user.email && data) LS.set('celengan_data_' + _user.email, data); },
     getSheetUrl: () => (_user && _user.sheetId ? `https://docs.google.com/spreadsheets/d/${_user.sheetId}` : ''),
 
     async signIn(onProgress, promptMode = 'select_account') {
@@ -1096,6 +1100,7 @@
 
     signOut() {
       const tok = _token;
+      const oldEmail = _user && _user.email;
       saveToken('', 0);
       _user = null;
       _pendingProfile = null;
@@ -1103,7 +1108,8 @@
       _sheetIds = {};
       _loaded = false;
       LS.del('celengan_user');
-      try { sessionStorage.removeItem('celengan_lic_ok'); } catch (e) {}
+      LS.del('celengan_lic_ok');
+      if (oldEmail) LS.del('celengan_data_' + oldEmail);
       if (tok && global.google && global.google.accounts && global.google.accounts.oauth2 && global.google.accounts.oauth2.revoke) {
         try { global.google.accounts.oauth2.revoke(tok, () => {}); } catch (e) {}
       }
