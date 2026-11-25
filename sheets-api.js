@@ -11,6 +11,10 @@
 
   // Ganti dengan OAuth 2.0 Client ID (Web application) dari Google Cloud Console Anda.
   const DEFAULT_CLIENT_ID = '998367672026-41821kqb669flr7g4kvqig10o461he4p.apps.googleusercontent.com';
+  // Isi LICENSE_API dengan URL Web App (/exec) dari license-apps-script.gs atau Cloudflare Worker.
+  // Biarkan '' jika ingin mode bebas tanpa pengecekan lisensi.
+  const LICENSE_API = 'https://script.google.com/macros/s/AKfycbzX01ua-WxtPBO-CBEwVJR23pMDpQPfABPv8O-GrITCI9uwafkwdyKw640kHiPA2M0/exec';
+  const LYNK_URL = 'https://lynk.id/softwareberkah/6zvy3l3poplw/checkout';
   const SCOPES = 'https://www.googleapis.com/auth/drive.file openid email profile';
   const DRIVE_APP_KEY = 'celenganApp';
   const DRIVE_APP_VAL = 'v1';
@@ -941,7 +945,66 @@
     }
   }
 
-  /* ====================== PUBLIC API ====================== */
+  /* ====================== PUBLIC API & LISENSI ====================== */
+
+  let _pendingProfile = null; // { email, name, picture } sementara sebelum aktivasi lisensi selesai
+
+  function isLicenseEnabled() {
+    return !!String(LICENSE_API || '').trim();
+  }
+
+  function isSessionLicenseVerified(email) {
+    if (!isLicenseEnabled()) return true;
+    try { return sessionStorage.getItem('celengan_lic_ok') === String(email || '').toLowerCase(); } catch (e) { return false; }
+  }
+
+  function markSessionLicenseVerified(email) {
+    try { sessionStorage.setItem('celengan_lic_ok', String(email || '').toLowerCase()); } catch (e) {}
+  }
+
+  async function callLicenseServer(payload) {
+    const res = await fetch(LICENSE_API.trim(), {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    const text = await res.text();
+    let json = null;
+    try { json = JSON.parse(text); } catch (e) { throw new Error('Server lisensi tidak merespons dengan benar.'); }
+    return json;
+  }
+
+  async function provisionAndLoadUser(info, onProgress) {
+    const email = info.email || '';
+    const prev = LS.get('celengan_user', null);
+    const cachedSheet = (prev && prev.email === email ? prev.sheetId : '') || LS.get('celengan_sheet_' + email, '');
+
+    if (onProgress) onProgress('Memeriksa Spreadsheet di Google Drive…');
+    let sheetId = await findExistingSheet(cachedSheet);
+    let isNew = false;
+
+    if (!sheetId) {
+      isNew = true;
+      sheetId = await createSpreadsheetForUser('', onProgress);
+    }
+
+    _user = {
+      email,
+      name: info.name || email,
+      picture: info.picture || '',
+      sheetId
+    };
+    _pendingProfile = null;
+    LS.set('celengan_user', _user);
+    if (email) LS.set('celengan_sheet_' + email, sheetId);
+
+    if (onProgress) onProgress('Memuat data keuangan…');
+    await loadAllTables(true);
+
+    if (isNew) {
+      await snap_();
+    }
+    return { user: _user, isNew };
+  }
 
   function serialized(fn) {
     const p = _mutex.then(fn, fn);
@@ -953,6 +1016,9 @@
     getClientId,
     setClientId,
     isClientConfigured,
+    isLicenseEnabled,
+    getLynkUrl: () => String(LYNK_URL || '').trim(),
+    getPendingEmail: () => (_pendingProfile && _pendingProfile.email) || (_user && _user.email) || '',
     hasUser: () => !!(_user && _user.email && _user.sheetId),
     getUser: () => _user,
     hasToken,
@@ -965,36 +1031,59 @@
 
         if (onProgress) onProgress('Membaca profil Google…');
         const info = await fetchUserInfo();
-        const email = info.email || '';
-        const prev = LS.get('celengan_user', null);
-        const cachedSheet = (prev && prev.email === email ? prev.sheetId : '') || LS.get('celengan_sheet_' + email, '');
+        const email = String(info.email || '').trim().toLowerCase();
 
-        if (onProgress) onProgress('Memeriksa Spreadsheet di Google Drive…');
-        let sheetId = await findExistingSheet(cachedSheet);
-        let isNew = false;
-
-        if (!sheetId) {
-          isNew = true;
-          sheetId = await createSpreadsheetForUser('', onProgress);
+        if (isLicenseEnabled()) {
+          if (onProgress) onProgress('Memeriksa lisensi akun…');
+          const lic = await callLicenseServer({ a: 'check', token: _token });
+          if (!lic.ok) {
+            _pendingProfile = { email, name: info.name || email, picture: info.picture || '' };
+            const err = new Error(lic.err || 'Akun belum memiliki lisensi aktif.');
+            err.needLicense = true;
+            err.email = email;
+            throw err;
+          }
+          markSessionLicenseVerified(email);
         }
 
-        _user = {
-          email,
-          name: info.name || email,
-          picture: info.picture || '',
-          sheetId
-        };
-        LS.set('celengan_user', _user);
-        if (email) LS.set('celengan_sheet_' + email, sheetId);
+        return provisionAndLoadUser(info, onProgress);
+      });
+    },
 
-        if (onProgress) onProgress('Memuat data keuangan…');
-        await loadAllTables(true);
-
-        if (isNew) {
-          // Untuk user baru, langsung jalankan snapshot awal
-          await snap_();
+    async verifySessionLicense() {
+      return serialized(async () => {
+        if (!isLicenseEnabled() || !_user || !_user.email) return true;
+        if (isSessionLicenseVerified(_user.email)) return true;
+        await ensureToken(true);
+        const lic = await callLicenseServer({ a: 'check', token: _token });
+        if (!lic.ok) {
+          _pendingProfile = { email: _user.email, name: _user.name || _user.email, picture: _user.picture || '' };
+          const err = new Error(lic.err || 'Lisensi tidak aktif.');
+          err.needLicense = true;
+          err.email = _user.email;
+          throw err;
         }
-        return { user: _user, isNew };
+        markSessionLicenseVerified(_user.email);
+        return true;
+      });
+    },
+
+    async activateLicense(code, onProgress) {
+      return serialized(async () => {
+        if (!isLicenseEnabled()) return { user: _user, isNew: false };
+        await ensureToken(true);
+        if (onProgress) onProgress('Memverifikasi kode lisensi…');
+        const res = await callLicenseServer({ a: 'activate', token: _token, code: String(code || '').trim() });
+        if (!res.ok) {
+          throw new Error(res.err || 'Kode lisensi tidak valid.');
+        }
+        let info = _pendingProfile;
+        if (!info) {
+          const uinfo = await fetchUserInfo();
+          info = { email: uinfo.email, name: uinfo.name || uinfo.email, picture: uinfo.picture || '' };
+        }
+        markSessionLicenseVerified(info.email);
+        return provisionAndLoadUser(info, onProgress);
       });
     },
 
@@ -1009,10 +1098,12 @@
       const tok = _token;
       saveToken('', 0);
       _user = null;
+      _pendingProfile = null;
       _tables = null;
       _sheetIds = {};
       _loaded = false;
       LS.del('celengan_user');
+      try { sessionStorage.removeItem('celengan_lic_ok'); } catch (e) {}
       if (tok && global.google && global.google.accounts && global.google.accounts.oauth2 && global.google.accounts.oauth2.revoke) {
         try { global.google.accounts.oauth2.revoke(tok, () => {}); } catch (e) {}
       }

@@ -292,8 +292,11 @@ function delTrx(id){
 async function init(){
   if(!SheetsAPI.hasUser()||!SheetsAPI.hasToken())return googleLoginUI();
   $('#ap').innerHTML='<div class="ld"><b>Memuat data dari Google Drive…</b></div>';
-  try{await api('getAll');draw('x')}
-  catch(e){
+  try{
+    await SheetsAPI.verifySessionLicense();
+    await api('getAll');draw('x');
+  }catch(e){
+    if(e.needLicense)return licenseUI('');
     if(e.auth||e.oauth)return lock(e.message);
     $('#ap').innerHTML=`<div class="card"><b class="out">Gagal memuat data</b><p class="mt">${esc(e.message)}</p>
       <button class="sv" style="margin-top:8px" onclick="init()">Coba lagi</button></div>`;
@@ -314,6 +317,34 @@ function googleLoginUI(msg='',status=''){
     <p class="${msg?'out':'mt'}" style="min-height:22px;margin:12px 0 0;font-size:13px">${esc(msg||(okCfg?(u&&u.email?'Sesi berakhir. Ketuk tombol di atas untuk masuk kembali.':'Baru pertama kali? Sheet akan dibuat otomatis di Drive Anda.'):''))}</p>
     <p style="margin:14px 0 0;font-size:12px"><a href="privacy.html" target="_blank" rel="noopener" style="color:var(--m);font-weight:600">Privacy Policy / Kebijakan Privasi</a></p></div>`;
 }
+function licenseUI(msg='',status=''){
+  $('#lk').hidden=false;
+  const email=SheetsAPI.getPendingEmail(),shop=SheetsAPI.getLynkUrl();
+  $('#lk').innerHTML=`<div class="lkb"><div class="lg">🎟️</div><h1>Aktivasi Lisensi</h1>
+    ${email?`<div class="upill">${esc(email)}</div>`:''}
+    <p class="mt" style="margin:8px 0 0;font-size:13px">Akun ini belum terdaftar aktif. Masukkan <b>Kode Lisensi</b> dari pembelian Anda di Lynk.id.</p>
+    <div class="gcfg" style="margin:14px 0 8px">
+      <input id="lickey" placeholder="CLG-XXXX-XXXX" autocomplete="off" style="text-transform:uppercase;text-align:center;font-weight:700;letter-spacing:.08em" ${busy?'disabled':''}>
+      <button class="sv" style="margin-top:4px;padding:12px;min-height:44px" onclick="submitLicenseKey()" ${busy?'disabled':''}>${busy?SP+' '+esc(status||'Memverifikasi…'):'Aktifkan Lisensi'}</button>
+    </div>
+    ${shop?`<a class="gbtn" href="${esc(shop)}" target="_blank" rel="noopener" style="text-decoration:none;margin-top:8px">🛒 Beli Lisensi di Lynk.id</a>`:''}
+    <button class="lksub" onclick="switchGoogleAccount()">Ganti akun Google</button>
+    <p class="${msg?'out':'mt'}" style="min-height:22px;margin:10px 0 0;font-size:13px">${esc(msg)}</p></div>`;
+}
+async function submitLicenseKey(){
+  if(busy)return;
+  const code=($('#lickey').value||'').trim().toUpperCase();
+  if(!code)return licenseUI('Masukkan kode lisensi terlebih dahulu.');
+  busy=true;licenseUI('','Mengaktifkan lisensi…');
+  try{
+    const res=await SheetsAPI.activateLicense(code,s=>licenseUI('',s));
+    await api('login');
+    busy=false;$('#lk').hidden=true;draw('x');
+    toast(res.isNew?'✓ Lisensi aktif & Sheet dibuat di Drive Anda!':'✓ Lisensi berhasil diaktifkan!','ok',3200);
+  }catch(e){
+    busy=false;licenseUI(e.message||'Gagal mengaktifkan lisensi.');
+  }
+}
 function saveClientIdUI(){
   const v=($('#gcid').value||'').trim();
   if(!v||!v.includes('.apps.googleusercontent.com'))return alert('Masukkan Google Client ID yang valid (*.apps.googleusercontent.com)');
@@ -327,7 +358,9 @@ async function startGoogleLogin(resume=false){
     busy=false;$('#lk').hidden=true;draw('x');
     if(res.isNew)toast('✓ Sheet baru dibuat di Google Drive Anda!','ok',3200);
   }catch(e){
-    busy=false;googleLoginUI(e.message||'Gagal masuk dengan Google');
+    busy=false;
+    if(e.needLicense)return licenseUI('');
+    googleLoginUI(e.message||'Gagal masuk dengan Google');
   }
 }
 function switchGoogleAccount(){
