@@ -311,7 +311,8 @@ function googleLoginUI(msg='',status=''){
       <button class="sv" style="margin-top:4px;padding:10px;min-height:40px" onclick="saveClientIdUI()">Simpan Client ID</button></div>`}
     <button class="gbtn" style="margin-top:10px" onclick="startGoogleLogin(${u&&u.email?'true':'false'})" ${busy||!okCfg?'disabled':''}>${busy?SP+'<span>'+esc(status||'Menghubungkan…')+'</span>':GOOGLE_SVG+'<span>'+(u&&u.email?'Lanjutkan dengan Google':'Masuk dengan Google')+'</span>'}</button>
     ${u&&u.email&&!busy?`<button class="lksub" onclick="switchGoogleAccount()">Ganti akun Google</button>`:''}
-    <p class="${msg?'out':'mt'}" style="min-height:22px;margin:12px 0 0;font-size:13px">${esc(msg||(okCfg?(u&&u.email?'Sesi berakhir. Ketuk tombol di atas untuk masuk kembali.':'Baru pertama kali? Sheet akan dibuat otomatis di Drive Anda.'):''))}</p></div>`;
+    <p class="${msg?'out':'mt'}" style="min-height:22px;margin:12px 0 0;font-size:13px">${esc(msg||(okCfg?(u&&u.email?'Sesi berakhir. Ketuk tombol di atas untuk masuk kembali.':'Baru pertama kali? Sheet akan dibuat otomatis di Drive Anda.'):''))}</p>
+    <p style="margin:14px 0 0;font-size:12px"><a href="privacy.html" target="_blank" rel="noopener" style="color:var(--m);font-weight:600">Privacy Policy / Kebijakan Privasi</a></p></div>`;
 }
 function saveClientIdUI(){
   const v=($('#gcid').value||'').trim();
@@ -463,7 +464,7 @@ const V={
       <div class="row2" onclick="openSheet()"><div class="ic" style="background:#22c55e33">📊</div><span class="g">Google Sheet saya</span><span class="mt">Buka</span><span class="chev">›</span></div></div>
       <p class="gl">Tampilan</p><div class="grp">${rw(['tema','🎨','#ffd60a','Tema warna',TEMA[tema][0]])}</div><p class="gl">Keamanan</p><div class="grp">
       <div class="row2" onclick="logoutGoogle()"><div class="ic" style="background:#f59e0b33">🚪</div><div class="g"><b>Keluar akun Google</b><small class="mt" style="display:block">${esc(u.email||'')}</small></div><span class="chev">›</span></div></div>
-      <p class="mt" style="font-size:12px;margin:10px 4px"></p>`;
+      <p class="mt" style="font-size:12px;margin:10px 4px"><a href="privacy.html" target="_blank" rel="noopener" style="color:var(--m)">Privacy Policy / Kebijakan Privasi</a></p>`;
   },
   target(){
     const sv=x=>isA(x)?Number((S.aset.find(a=>a.id==String(x).slice(2))||{}).nilai||0):Number((S.banks.find(b=>b.id==x)||{}).saldo||0);
