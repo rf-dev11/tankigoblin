@@ -115,3 +115,6 @@ nav .on{background:var(--y);color:var(--ink);border-color:var(--ink);font-weight
 .gcfg{text-align:left;background:#fff;border:var(--bd);border-radius:18px;padding:14px;margin:14px 0;box-shadow:3px 3px 0 var(--ink)}
 .gcfg input{width:100%;margin:8px 0;background:var(--bg);color:var(--ink);border:2px solid var(--ink);border-radius:10px;padding:9px 10px;font:inherit;font-size:13px}
 .lksub{background:none;border:0;color:var(--p);font:inherit;font-size:13px;font-weight:700;padding:6px 10px;margin-top:8px;cursor:pointer}
+.hbtn{width:42px;height:42px;flex:none;background:#fff;color:var(--ink);border:2px solid var(--ink);border-radius:50%;font:inherit;font-size:19px;display:grid;place-items:center;box-shadow:2px 2px 0 var(--ink);cursor:pointer}
+.bdg{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;border:1.5px solid var(--ink);background:var(--c2);color:var(--ink)}
+.bdg.ok{background:#bbf7d0;color:#065f46}.bdg.warn{background:var(--y);color:var(--ink)}.bdg.over{background:#fecaca;color:#991b1b}

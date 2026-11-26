@@ -77,7 +77,7 @@ return `<h1>Dompet</h1><div class="hero"><small>Saldo dompet</small><div class="
 /* pasang ke aplikasi */
 TEMA.laut=['Laut','#0b7bb8'];
 try{if(!localStorage.getItem('tema2')){localStorage.setItem('tema2','1');setTema('laut',1)}}catch(e){}
-NAV[3][1]='👤';NAV.splice(3,0,['wallet','💳','Dompet']);
+NAV.splice(3,0,['wallet','💳','Dompet']);
 $('#nv').innerHTML=NAV.map(([k,i,l])=>`<button data-k="${k}" onclick="go('${k}')"><span>${i}</span>${l}</button>`).join('');
 const _draw=draw;
 draw=function(d){_draw(d);if(tab=='wallet')$('#fab').classList.add('h')};

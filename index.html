@@ -127,7 +127,7 @@ nav:not([hidden]){animation:navin .45s var(--ease)}
 .chev{color:var(--m);font-size:22px;line-height:1}
 /* popup mini sukses / gagal */
 .ts{position:fixed;top:calc(10px + env(safe-area-inset-top));left:50%;z-index:30;max-width:min(92vw,420px);display:flex;align-items:center;gap:8px;background:#2c2c2ee8;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:.5px solid #ffffff24;border-radius:99px;padding:10px 18px;font-size:14px;font-weight:600;box-shadow:0 10px 30px #0009;transform:translate(-50%,-160%);opacity:0;pointer-events:none;transition:transform .45s var(--spring),opacity .25s}
-.ts.on{transform:translate(-50%,0);opacity:1}
+.ts.on{transform:translate(-50%,0);opacity:1;pointer-events:auto}
 .ts.ok{color:var(--g)}.ts.bad{color:var(--r);border-radius:18px}
 .sp{display:inline-block;flex:none;width:14px;height:14px;border:2px solid #ffffff44;border-top-color:var(--g);border-radius:50%;animation:spin .7s linear infinite}
 /* tata letak */
@@ -198,7 +198,7 @@ const lgo=b=>b.logo?`<img class="ic" src="${esc(b.logo)}" alt="">`:`<div class="
 const today=()=>new Date().toLocaleDateString('sv');
 const nowT=()=>new Date().toTimeString().slice(0,5);
 const sw=(on,h)=>`<label class="sw" onclick="event.stopPropagation()"><input type="checkbox" ${on?'checked':''} onchange="${h}"><i></i></label>`;
-const EMPTY={banks:[],cats:[],trx:[],ang:[],aset:[],utang:[],rutin:[],target:[],riw:[]};
+const EMPTY={banks:[],cats:[],trx:[],ang:[],aset:[],utang:[],rutin:[],target:[],service:[],riw:[]};
 
   const TEMA={hijau:['Hijau','#9dc03f'],biru:['Biru','#5b96ea'],oranye:['Oranye','#f4694b'],kuning:['Kuning','#f2b233'],pink:['Pink','#f58ac0'],ungu:['Ungu','#a58bf0'],tosca:['Tosca','#3fd0c0'],merah:['Merah','#e8453c'],krem:['Krem','#e6dfc8']};
 let tema='hijau';try{tema=localStorage.getItem('tema')||'hijau'}catch(e){}
@@ -280,17 +280,17 @@ async function pump(){
   if(qf){qf=false;try{await api('getAll')}catch(e){}}   // gagal: ambil ulang data asli dari Sheet
   draw();
 }
-async function reconnectGoogle(){
+async function reconnectGoogle(forceSelect=false){
   try{
     toast(SP+'Menyambung ulang…','');
-    await SheetsAPI.reconnect();
+    await SheetsAPI.reconnect(!!forceSelect);
     await SheetsAPI.verifySessionLicense();
     qf=false;
     if(Q.length){await pump();}
     else{await api('getAll');draw();toast('✓ Tersinkron dengan Google Drive','ok',2200);}
   }catch(e){
     if(e.needLicense)return licenseUI('');
-    toast('✕ '+esc(e.message),'bad',4000);
+    toast('✕ '+esc(e.message)+' <button class="x" style="padding:2px 6px;color:var(--p)" onclick="reconnectGoogle(1)">Coba lagi</button>','bad',0);
   }
 }
 addEventListener('beforeunload',e=>{if(Q.length||qb){e.preventDefault();e.returnValue=''}});
@@ -424,11 +424,12 @@ const donut=(l,tipe,judul)=>{
 
 const V={
   trx(){
-    const l=mt(),h=x=>hide?'Rp •••••':rp(x);
-    return '<h1>Transaksi</h1>'+chips()+`<div class="hero"><small>Total saldo</small>
+    const l=mt(),h=x=>hide?'Rp •••••':rp(x),due=S.service.map(serviceDue).filter(x=>x.sisaHari!==null&&x.sisaHari<=7).sort((a,b)=>a.sisaHari-b.sisaHari);
+    return `<div class="rw"><h1>Transaksi</h1><button class="hbtn" onclick="go('akun')" aria-label="Akun">👤</button></div>`+chips()+`<div class="hero"><small>Total saldo</small>
       <div class="big">${h(total())}<button class="eye" onclick="hide=!hide;draw()" aria-label="Tampilkan atau sembunyikan saldo">${hide?'🙈':'👁'}</button></div>
-      <div class="pp"><div><small>↓ Pemasukan</small><b>${h(sum(l,'masuk'))}</b></div><div><small>↑ Pengeluaran</small><b>${h(sum(l,'keluar'))}</b></div></div></div>
-      <div class="card"><input class="srch" placeholder="Cari catatan atau kategori…" value="${esc(Fq.q)}" oninput="Fq.q=this.value;tl()">
+      <div class="pp"><div><small>↓ Pemasukan</small><b>${h(sum(l,'masuk'))}</b></div><div><small>↑ Pengeluaran</small><b>${h(sum(l,'keluar'))}</b></div></div></div>`+
+      (due.length?`<div class="card" onclick="go('motor')" style="padding:12px 16px"><div class="rw"><span>🔧 <b>${esc(due[0].s.nama)}</b>${due[0].s.kendaraan?' · '+esc(due[0].s.kendaraan):''}${due.length>1?' (+'+(due.length-1)+' lainnya)':''}</span><span class="bdg ${due[0].status}">${due[0].label}</span></div></div>`:'')+
+      `<div class="card"><input class="srch" placeholder="Cari catatan atau kategori…" value="${esc(Fq.q)}" oninput="Fq.q=this.value;tl()">
       <div class="rw" style="margin-top:8px"><select class="srch" onchange="Fq.k=this.value;tl()"><option value="">Semua kategori</option>${S.cats.map(c=>`<option value="${c.id}" ${c.id==Fq.k?'selected':''}>${esc(c.nama)} (${c.tipe=='masuk'?'masuk':'keluar'})</option>`).join('')}</select>
       <select class="srch" onchange="Fq.b=this.value;tl()"><option value="">Semua dompet</option>${S.banks.map(b=>`<option value="${b.id}" ${b.id==Fq.b?'selected':''}>${esc(b.nama)}</option>`).join('')}</select></div></div><div id="tl">${trxList()}</div>`;
   },
@@ -513,7 +514,8 @@ const V={
     if(pg)return `<div class="nb"><button class="bk" onclick="back()">‹ Pengaturan</button></div><h1>${T[pg]}</h1>`+V[pg]();
     const rw=([k,i,c,l,d])=>`<div class="row2" onclick="push('${k}')"><div class="ic" style="background:${c}33">${i}</div><span class="g">${l}</span><span class="mt">${d}</span><span class="chev">›</span></div>`;
     const u=SheetsAPI.getUser()||{};
-    return `<p class="gl" style="margin-top:4px">Data</p><div class="grp">${[
+    return `<div class="nb"><button class="bk" onclick="goSub('bersih')">‹ Akun</button></div><h1>Pengaturan</h1>
+      <p class="gl" style="margin-top:4px">Data</p><div class="grp">${[
       ['dompet','👛','#3b82f6','Dompet',S.banks.length+' dompet'],
       ['kat','🏷️','#a855f7','Kategori',S.cats.length+' kategori'],
       ['rutin','🔁','#0bc78d','Transaksi otomatis',S.rutin.filter(r=>r.aktif).length+' aktif']].map(rw).join('')}
@@ -534,23 +536,32 @@ const V={
         <small class="${dl!==null&&dl<0&&sisa>0?'out':'mt'}">${p>=100?'🎉 Target tercapai':'Kurang '+rp(sisa)+(dl===null?'':dl<0?' · lewat tenggat':' · '+dl+' hari lagi'+(per?' · nabung '+rp(per)+'/bulan':''))}</small></div>`}).join('')||
       '<div class="card empty"><b>Belum ada target</b><p class="mt">Buat target, misalnya "Laptop", lalu pilih dompet atau aset tempat uangnya disimpan. Tekan +.</p></div>';
   },
+  motor(){
+    const items=S.service.map(serviceDue).sort((a,b)=>(a.sisaHari??99999)-(b.sisaHari??99999));
+    const urgent=items.filter(x=>x.sisaHari!==null&&x.sisaHari<=7).length;
+    return `<h1>Kendaraan</h1><div class="hero"><small>Jadwal service &amp; perawatan</small><div class="big">${items.length} jadwal</div><small>${urgent?urgent+' jadwal mendekati atau lewat waktu':'Semua jadwal masih aman. Tekan + untuk tambah jadwal baru.'}</small></div>`+
+      (items.map(d=>{const s=d.s;
+        return `<div class="card" onclick="serviceModal('${s.id}')"><div class="rw"><div class="it" style="padding:0;flex:1"><div class="ic" style="background:#ffffff24">🛵</div><div class="g"><b>${esc(s.nama)}</b><small>${s.kendaraan?esc(s.kendaraan)+' · ':''}Terakhir ${s.tgl?s.tgl.split('-').reverse().join('/'):'-'}${s.km!==''&&s.km!==undefined?' ('+Number(s.km).toLocaleString('id-ID')+' km)':''}</small></div></div><span class="bdg ${d.status}">${esc(d.label)}</span></div>
+          <div class="rw" style="margin-top:8px"><small class="mt">${d.nextTgl?'Berikutnya: '+d.nextTgl.split('-').reverse().join('/'):''}${d.nextKm?(d.nextTgl?' · ':'Target: ')+d.nextKm.toLocaleString('id-ID')+' km':''}</small>${s.biaya>0?`<b>${rp(s.biaya)}</b>`:''}</div></div>`}).join('')||
+      '<div class="card empty"><b>Belum ada jadwal service</b><p class="mt">Catat jadwal ganti oli, service rutin, atau pajak motor dengan tombol +.</p></div>');
+  },
   akun(){
-    const sb=sub=='set'&&pg;
-    return (sb?'':`<h1>Akun</h1><div class="chips">${[['bersih','Nilai bersih'],['aset','Aset'],['utang','Utang'],['target','Target'],['set','Pengaturan']].map(([k,l])=>`<button class="chip ${sub==k?'on':''}" onclick="goSub('${k}')">${l}</button>`).join('')}</div>`)+V[sub]();
+    if(sub=='set')return V.set();
+    return `<div class="rw"><h1>Akun</h1><button class="hbtn" onclick="goSub('set')" aria-label="Pengaturan">⚙️</button></div><div class="chips">${[['bersih','Nilai bersih'],['aset','Aset'],['utang','Utang'],['target','Target']].map(([k,l])=>`<button class="chip ${sub==k?'on':''}" onclick="goSub('${k}')">${l}</button>`).join('')}</div>`+V[sub]();
   }
 };
-const NAV=[['trx','🧾','Transaksi'],['dash','📊','Anggaran'],['ring','📈','Ringkasan'],['akun','👛','Akun']];
+const NAV=[['trx','🧾','Transaksi'],['dash','📊','Anggaran'],['ring','📈','Ringkasan'],['motor','🛵','Kendaraan']];
   V.tema=()=>`<div class="tg">${Object.entries(TEMA).map(([k,[n,c]])=>`<button class="tc ${k==tema?'on':''}" style="background:${c}" onclick="setTema('${k}')"><span>${n}</span><b>${k==tema?'✓':''}</b></button>`).join('')}</div><p class="mt" style="font-size:12px;margin:10px 0 0">Warna disimpan di perangkat ini.</p>`;
 $('#nv').innerHTML=NAV.map(([k,i,l])=>`<button data-k="${k}" onclick="go('${k}')"><span>${i}</span>${l}</button>`).join('');
-const fkey=()=>sub=='set'?pg:sub;
+const fkey=()=>tab=='akun'?(sub=='set'?pg:sub):tab;
 function draw(dir){   // dir: 'x' = muncul bertahap, 'f' = masuk dari kanan, 'b' = kembali dari kiri
   $('#nv').hidden=false;
   document.querySelectorAll('#nv button').forEach(b=>b.classList.toggle('on',b.dataset.k==tab));
   const ap=$('#ap');ap.className='w';ap.innerHTML=V[tab]();
   if(dir){void ap.offsetWidth;ap.classList.add(dir==='x'?'enter':dir);scrollTo(0,0)}
   const k=fkey(),f=$('#fab');
-  f.classList.toggle('h',tab=='ring'||(tab=='akun'&&!FA[k]));
-  f.onclick=tab=='akun'?FA[k]:()=>trxForm();
+  f.classList.toggle('h',!FA[k]);
+  f.onclick=FA[k]||(()=>trxForm());
   const on=$('.chip.on');if(on)on.scrollIntoView({inline:'center',block:'nearest'});
 }
 function go(k){
@@ -790,6 +801,102 @@ function saveTarget(id,btn){
   run('saveTarget',d,btn);
 }
 
+function serviceDue(s){
+  const hari=Number(s.hari)||0,kmInt=Number(s.km_int)||0;
+  let nextTgl='',sisaHari=null,status='ok',label='Terjadwal';
+  if(hari>0&&s.tgl){
+    const d=new Date(s.tgl+'T00:00');d.setDate(d.getDate()+hari);
+    nextTgl=d.toLocaleDateString('sv');
+    const now=new Date(today()+'T00:00');
+    sisaHari=Math.round((d-now)/864e5);
+    if(sisaHari<0){status='over';label='Lewat '+(-sisaHari)+' hari';}
+    else if(sisaHari===0){status='warn';label='Hari ini';}
+    else if(sisaHari<=7){status='warn';label=sisaHari+' hari lagi';}
+    else{label=sisaHari+' hari lagi';}
+  }else if(kmInt>0){label='Tiap '+kmInt.toLocaleString('id-ID')+' km';}
+  const nextKm=(s.km!==''&&s.km!==undefined&&kmInt>0)?Number(s.km)+kmInt:null;
+  return {s,nextTgl,sisaHari,nextKm,status,label};
+}
+function serviceModal(id){
+  const s=S.service.find(x=>x.id==id);if(!s)return;
+  const d=serviceDue(s);
+  modal(esc(s.nama),`${s.kendaraan?`<div class="fr"><span>Kendaraan</span><b>${esc(s.kendaraan)}</b></div>`:''}
+    <div class="fr"><span>Status</span><span class="bdg ${d.status}">${esc(d.label)}</span></div>
+    <div class="fr"><span>Terakhir service</span><b>${s.tgl?s.tgl.split('-').reverse().join('/'):'-'}${s.km!==''&&s.km!==undefined?' ('+Number(s.km).toLocaleString('id-ID')+' km)':''}</b></div>
+    ${d.nextTgl?`<div class="fr"><span>Jadwal berikutnya</span><b>${d.nextTgl.split('-').reverse().join('/')}</b></div>`:''}
+    ${d.nextKm?`<div class="fr"><span>Target odometer</span><b>${d.nextKm.toLocaleString('id-ID')} km</b></div>`:''}
+    ${s.biaya>0?`<div class="fr"><span>Estimasi biaya</span><b>${rp(s.biaya)}</b></div>`:''}
+    ${s.catatan?`<div class="fr"><span>Catatan</span><b>${esc(s.catatan)}</b></div>`:''}
+    <button class="sv" onclick="doneServiceForm('${s.id}')">✓ Catat Sudah Service</button>
+    <p style="text-align:center;margin-top:12px"><button class="x" style="color:var(--g)" onclick="serviceForm('${s.id}')">✎ Edit Jadwal</button></p>`);
+}
+function serviceForm(id){
+  const s=S.service.find(x=>x.id==id)||{nama:'',kendaraan:'',hari:60,km_int:2000,tgl:today(),km:'',biaya:'',bank:S.banks[0]?S.banks[0].id:'',kategori:(S.cats.find(c=>c.tipe=='keluar'&&/transport|bensin|motor/i.test(c.nama))||S.cats.find(c=>c.tipe=='keluar')||{}).id||'',catatan:''};
+  const ks=S.cats.filter(c=>c.tipe=='keluar');
+  modal(id?'Edit jadwal service':'Tambah jadwal service',
+    `<div class="fr"><span>Nama service</span><input id="sn" placeholder="Ganti oli, Service CVT" value="${esc(s.nama)}"></div>
+    <div class="fr"><span>Kendaraan</span><input id="sk" placeholder="Vario 125, Beat" value="${esc(s.kendaraan)}"></div>
+    <div class="fr"><span>Interval (hari)</span><input id="sh" type="number" inputmode="numeric" placeholder="60" value="${s.hari}"></div>
+    <div class="fr"><span>Interval (km)</span><input id="skm" type="number" inputmode="numeric" placeholder="Opsional, mis. 2000" value="${s.km_int}"></div>
+    <div class="fr"><span>Terakhir service</span><input id="st" type="date" value="${s.tgl||today()}"></div>
+    <div class="fr"><span>KM terakhir</span><input id="sk0" type="number" inputmode="numeric" placeholder="Opsional" value="${s.km}"></div>
+    <div class="fr"><span>Estimasi biaya</span><input id="sb" type="number" inputmode="decimal" placeholder="Opsional" value="${s.biaya}"></div>
+    ${S.banks.length?`<div class="fr"><span>Dompet</span><select id="sbn">${S.banks.map(b=>`<option value="${b.id}" ${b.id==s.bank?'selected':''}>${esc(b.nama)}</option>`).join('')}</select></div>`:''}
+    ${ks.length?`<div class="fr"><span>Kategori</span><select id="sct">${ks.map(c=>`<option value="${c.id}" ${c.id==s.kategori?'selected':''}>${esc(c.nama)}</option>`).join('')}</select></div>`:''}
+    <div class="fr"><span>Catatan</span><input id="sc" placeholder="Bengkel / tipe oli" value="${esc(s.catatan)}"></div>
+    <button class="sv" onclick="saveService('${id||''}',this)">Simpan</button>${id?del('delService',id,'Hapus jadwal service ini?'):''}`);
+}
+function saveService(id,btn){
+  const d={
+    id:id||('i'+Math.random().toString(16).slice(2,11).padEnd(9,'0')),
+    nama:$('#sn').value.trim(),kendaraan:$('#sk').value.trim(),
+    hari:Math.max(0,Math.round(Number($('#sh').value)||0)),
+    km_int:Math.max(0,Math.round(Number($('#skm').value)||0)),
+    tgl:$('#st').value||today(),
+    km:$('#sk0').value===''?'':Math.max(0,Number($('#sk0').value)||0),
+    biaya:$('#sb').value===''?'':Math.max(0,Number($('#sb').value)||0),
+    bank:$('#sbn')?$('#sbn').value:'',kategori:$('#sct')?$('#sct').value:'',
+    catatan:$('#sc').value.trim()
+  };
+  if(!d.nama)return alert('Isi nama service');
+  if(d.hari<=0&&d.km_int<=0)return alert('Isi interval hari atau interval KM lebih dari 0');
+  run('saveService',d,btn,()=>{
+    if(id){const i=S.service.findIndex(x=>x.id==id);if(i>=0)S.service[i]=d;else S.service.push(d);}
+    else S.service.push(d);
+  });
+}
+function doneServiceForm(id){
+  const s=S.service.find(x=>x.id==id);if(!s)return;
+  const ks=S.cats.filter(c=>c.tipe=='keluar'),d=serviceDue(s);
+  const bankDef=s.bank||(S.banks[0]?S.banks[0].id:'');
+  const catDef=s.kategori||(ks[0]?ks[0].id:'');
+  modal('Catat Sudah Service',
+    `<div class="fr"><span>Service</span><b>${esc(s.nama)}${s.kendaraan?' ('+esc(s.kendaraan)+')':''}</b></div>
+    <div class="fr"><span>Tanggal service</span><input id="dtgl" type="date" value="${today()}"></div>
+    <div class="fr"><span>Biaya (Rp)</span><input id="dbia" type="number" inputmode="decimal" placeholder="0" value="${s.biaya||''}"></div>
+    <div class="fr"><span>KM sekarang</span><input id="dkm" type="number" inputmode="numeric" placeholder="Opsional" value="${d.nextKm??(s.km??'')}"></div>
+    ${S.banks.length?`<div class="fr"><span>Catat ke pengeluaran</span><label class="sw"><input id="dtrx" type="checkbox" checked><i></i></label></div>
+    <div class="fr"><span>Bayar pakai</span><select id="dbnk">${S.banks.map(b=>`<option value="${b.id}" ${b.id==bankDef?'selected':''}>${esc(b.nama)} (${rp(b.saldo)})</option>`).join('')}</select></div>`:''}
+    ${ks.length?`<div class="fr"><span>Kategori</span><select id="dcat">${ks.map(c=>`<option value="${c.id}" ${c.id==catDef?'selected':''}>${esc(c.nama)}</option>`).join('')}</select></div>`:''}
+    <div class="fr"><span>Catatan</span><input id="dnot" placeholder="Bengkel / part yang diganti" value="${esc(s.catatan||'')}"></div>
+    <button class="sv" onclick="saveDoneService('${s.id}',this)">Simpan &amp; Jadwalkan Ulang</button>`);
+}
+function saveDoneService(id,btn){
+  const s=S.service.find(x=>x.id==id);if(!s)return;
+  const tgl=$('#dtgl').value||today(),biaya=Math.max(0,Number($('#dbia').value)||0);
+  const kmVal=$('#dkm').value===''?'':Math.max(0,Number($('#dkm').value)||0);
+  const catatTrx=!!($('#dtrx')&&$('#dtrx').checked&&biaya>0&&$('#dbnk'));
+  const bank=$('#dbnk')?$('#dbnk').value:s.bank,kategori=$('#dcat')?$('#dcat').value:s.kategori,catatan=$('#dnot').value.trim();
+  const trxId='i'+Math.random().toString(16).slice(2,11).padEnd(9,'0'),jam=nowT();
+  run('doneService',{id,tgl,km:kmVal,biaya,bank,kategori,catatan,catatTrx,trxId,jam},btn,()=>{
+    s.tgl=tgl;if(kmVal!=='')s.km=kmVal;if(biaya>0)s.biaya=biaya;s.bank=bank;s.kategori=kategori;s.catatan=catatan;
+    if(catatTrx){
+      const t={id:trxId,tipe:'keluar',bank,bank2:'',kategori:kategori||'',jumlah:biaya,biaya:0,tanggal:tgl,jam,catatan:'Service: '+s.nama+(s.kendaraan?' ('+s.kendaraan+')':'')+(catatan?' · '+catatan:'')};
+      S.trx.push(t);applyTrx(t,1);
+    }
+  });
+}
+
 function openSheet(){
   const u=SheetsAPI.getSheetUrl();
   if(u)window.open(u,'_blank','noopener');
@@ -803,7 +910,7 @@ let tx=0,ty=0;
 addEventListener('touchstart',e=>{const t=e.touches[0];tx=t.clientX;ty=t.clientY},{passive:true});
 addEventListener('touchend',e=>{const t=e.changedTouches[0];
   if(tab=='akun'&&sub=='set'&&pg&&!$('#md').classList.contains('o')&&tx<40&&t.clientX-tx>80&&Math.abs(t.clientY-ty)<60)back()},{passive:true});
-const FA={target:()=>targetForm(),dompet:()=>bankForm(),aset:()=>asetForm(),utang:()=>utangForm(),kat:()=>katForm('','keluar'),rutin:()=>rutinForm()};
+const FA={trx:()=>trxForm(),dash:()=>trxForm(),motor:()=>serviceForm(),target:()=>targetForm(),dompet:()=>bankForm(),aset:()=>asetForm(),utang:()=>utangForm(),kat:()=>katForm('','keluar'),rutin:()=>rutinForm()};
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 init();
 </script>

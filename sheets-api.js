@@ -31,6 +31,7 @@
     Utang:     ['id', 'tipe', 'nama', 'jumlah', 'sisa', 'catatan', 'tempo'],
     Rutin:     ['id', 'nama', 'tipe', 'jumlah', 'hari', 'bank', 'kategori', 'aktif', 'terakhir', 'bank2'],
     Target:    ['id', 'nama', 'jumlah', 'sumber', 'tenggat'],
+    Service:   ['id', 'nama', 'kendaraan', 'hari', 'km_int', 'tgl', 'km', 'biaya', 'bank', 'kategori', 'catatan'],
     Riwayat:   ['id', 'nilai']
   };
 
@@ -43,6 +44,7 @@
     Aset: ['id'],
     Utang: ['id', 'tempo'],
     Target: ['id', 'sumber', 'tenggat'],
+    Service: ['id', 'tgl', 'bank', 'kategori'],
     Riwayat: ['id'],
     Rutin: ['id', 'bank', 'kategori', 'terakhir', 'bank2']
   };
@@ -568,6 +570,7 @@
       utang: read_('Utang').map(cleanRow),
       rutin: read_('Rutin').map(cleanRow),
       target: read_('Target').map(cleanRow),
+      service: read_('Service').map(cleanRow),
       riw: read_('Riwayat').slice(-400).map(cleanRow)
     };
   }
@@ -829,6 +832,63 @@
     return null;
   }
 
+  async function saveService_(d) {
+    const nama = String(d.nama || '').trim();
+    if (!nama) throw new Error('Nama jadwal service wajib diisi');
+    const hari = Math.max(0, Math.round(Number(d.hari) || 0));
+    const kmInt = Math.max(0, Math.round(Number(d.km_int) || 0));
+    if (hari <= 0 && kmInt <= 0) throw new Error('Isi interval hari atau interval KM lebih dari 0');
+    const tgl = String(d.tgl || today_());
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(tgl)) throw new Error('Format tanggal tidak valid');
+    const ex = d.id ? find_('Service', d.id) : null;
+    const id = (/^i[0-9a-f]{9}$/.test(String(d.id || '')) && !ex) ? d.id : (ex ? ex.id : newId_());
+    await put_('Service', {
+      id,
+      nama,
+      kendaraan: String(d.kendaraan || '').trim(),
+      hari,
+      km_int: kmInt,
+      tgl,
+      km: d.km !== '' && d.km !== undefined && d.km !== null ? Math.max(0, Number(d.km) || 0) : '',
+      biaya: d.biaya !== '' && d.biaya !== undefined && d.biaya !== null ? Math.max(0, Number(d.biaya) || 0) : '',
+      bank: String(d.bank || ''),
+      kategori: String(d.kategori || ''),
+      catatan: String(d.catatan || '').trim()
+    });
+    return id;
+  }
+
+  async function doneService_(d) {
+    const ex = find_('Service', d.id);
+    if (!ex) throw new Error('Jadwal service tidak ditemukan');
+    const o = cleanRow(ex);
+    const tgl = String(d.tgl || today_());
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(tgl)) throw new Error('Format tanggal tidak valid');
+    o.tgl = tgl;
+    if (d.km !== '' && d.km !== undefined && d.km !== null) o.km = Math.max(0, Number(d.km) || 0);
+    const biaya = Math.max(0, Number(d.biaya) || 0);
+    if (biaya > 0) o.biaya = biaya;
+    if (d.bank !== undefined) o.bank = String(d.bank || '');
+    if (d.kategori !== undefined) o.kategori = String(d.kategori || '');
+    if (d.catatan !== undefined) o.catatan = String(d.catatan || '').trim();
+    await put_('Service', o);
+
+    if (d.catatTrx && biaya > 0 && o.bank && find_('Dompet', o.bank)) {
+      const catNote = 'Service: ' + o.nama + (o.kendaraan ? ' (' + o.kendaraan + ')' : '') + (o.catatan ? ' · ' + o.catatan : '');
+      await addTrx_({
+        id: d.trxId,
+        tipe: 'keluar',
+        bank: o.bank,
+        kategori: o.kategori || '',
+        jumlah: biaya,
+        tanggal: tgl,
+        jam: d.jam || nowT_(),
+        catatan: catNote
+      });
+    }
+    return o.id;
+  }
+
   async function snap_() {
     const sum = (l, f) => l.reduce((a, x) => a + Number(f(x)), 0);
     const U = read_('Utang');
@@ -937,6 +997,13 @@
         return saveTarget_(d);
       case 'delTarget':
         await del_('Target', d.id);
+        return null;
+      case 'saveService':
+        return saveService_(d);
+      case 'doneService':
+        return doneService_(d);
+      case 'delService':
+        await del_('Service', d.id);
         return null;
       default:
         throw new Error('Aksi tidak dikenal: ' + d.a);
@@ -1091,9 +1158,9 @@
       });
     },
 
-    async reconnect() {
+    async reconnect(forceSelect = false) {
       return serialized(async () => {
-        await requestToken('');
+        await requestToken(forceSelect ? 'select_account' : '');
         return true;
       });
     },
